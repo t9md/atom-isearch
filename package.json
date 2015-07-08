@@ -1,0 +1,18 @@
+{
+  "name": "isearch",
+  "main": "./lib/main",
+  "version": "0.0.0",
+  "description": "Incremental search",
+  "keywords": [],
+  "activationCommands": {
+    "atom-workspace": "isearch:search-backward"
+  },
+  "repository": "https://github.com/t9md/atom-isearch",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+    "underscore-plus": "^1.6.6"
+  }
+}
