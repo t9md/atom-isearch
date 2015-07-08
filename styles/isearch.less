@@ -1,0 +1,20 @@
+@import "ui-variables";
+@import "syntax-variables";
+
+atom-text-editor::shadow {
+  .isearch-found .region {
+    background-color: transparent;
+    border-radius: @component-border-radius;
+    border: 1px solid @syntax-result-marker-color;
+    box-sizing: border-box;
+  }
+  .isearch-found.current .region {
+    background-color: transparent;
+    border-radius: @component-border-radius;
+    border: 1px solid red;
+    box-sizing: border-box;
+  }
+  .isearch-flash .region {
+    background-color: @background-color-info;
+  }
+}

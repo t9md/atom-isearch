@@ -1,3 +1,6 @@
 'atom-workspace':
   'ctrl-s': 'isearch:search-forward'
   'ctrl-cmd-r': 'isearch:search-backward'
+
+'atom-text-editor.isearch':
+  'ctrl-g': 'isearch:cancel'

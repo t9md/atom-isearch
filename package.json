@@ -4,9 +4,6 @@
   "version": "0.0.0",
   "description": "Incremental search",
   "keywords": [],
-  "activationCommands": {
-    "atom-workspace": "isearch:search-backward"
-  },
   "repository": "https://github.com/t9md/atom-isearch",
   "license": "MIT",
   "engines": {
