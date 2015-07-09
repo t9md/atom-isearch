@@ -11,6 +11,7 @@ class Input extends HTMLElement
     @appendChild @container
 
   initialize: (@main) ->
+    @cleared = false
     @mode = null
     @foundCount = 0
     @editorView = document.createElement 'atom-text-editor'
@@ -23,15 +24,17 @@ class Input extends HTMLElement
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor.isearch',
-      'isearch:cancel': => @cancel()
+      'isearch:cancel':            => @cancel()
       'isearch:fill-current-word': => @fillCurrentWord()
-      'core:cancel':    => @cancel()
-      'blur':           => @cancel()
+      'core:cancel':               => @cancel()
+      'core:confirm':              => @confirm()
+      # 'isearch:confirm':           => @confirm()
 
     @handleInput()
     this
 
   focus: ->
+    @cleared = false
     @panel.show()
     @editorView.focus()
 
@@ -40,6 +43,7 @@ class Input extends HTMLElement
 
   getDirection: ->
     @direction
+
 
   reset: ->
     @editor.setText ''
@@ -52,11 +56,27 @@ class Input extends HTMLElement
   refresh: ->
     @foundCountContainer.textContent = @foundCount
 
-  cancel: ->
+  isCleared: ->
+    @cleared
+
+  clear: ->
+    if @isCleared()
+      return
+    @cleared = true
     @reset()
     @main.clear()
+    @main.cursorDecoration?.getMarker().destroy()
+    @main.cursorDecoration = null
     @panel.hide()
     atom.workspace.getActivePane().activate()
+
+  confirm: ->
+    @main.decide()
+    @clear()
+
+  cancel: ->
+    @clear()
+    @main.restorePosition()
 
   handleInput: ->
     @subscriptions = subs = new CompositeDisposable

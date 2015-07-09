@@ -1,7 +1,7 @@
-'atom-workspace':
-  'ctrl-s': 'isearch:search-forward'
-  'ctrl-cmd-r': 'isearch:search-backward'
-
-'.platform-darwin atom-text-editor.isearch':
-  'ctrl-g': 'isearch:cancel'
-  'cmd-e': 'isearch:fill-current-word'
+# 'atom-workspace':
+#   'ctrl-s': 'isearch:search-forward'
+#   'ctrl-cmd-r': 'isearch:search-backward'
+#
+# '.platform-darwin atom-text-editor.isearch':
+#   'ctrl-g': 'isearch:cancel'
+#   'cmd-e': 'isearch:fill-current-word'

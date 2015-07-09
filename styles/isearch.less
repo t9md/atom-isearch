@@ -9,13 +9,15 @@ atom-text-editor::shadow {
     box-sizing: border-box;
   }
   .isearch-found.current .region {
-    background-color: @background-color-error;
-    // @background-color-selected;
+    background-color: @background-color-selected;
     border-radius: @component-border-radius;
-    border: 1px solid red;
+    border: 1px solid @syntax-result-marker-color;
     box-sizing: border-box;
   }
   .isearch-flash .region {
+    background-color: @syntax-selection-flash-color;
+  }
+  .isearch-cursor .region {
     background-color: @background-color-info;
   }
 }
