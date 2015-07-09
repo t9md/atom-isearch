@@ -24,7 +24,7 @@ I may change frequently style and keymap.
 
 * `isearch:search-eorward`: Search forward.
 * `isearch:search-backward`: Search backward.
-* `isearch:fill-current-word`: Fill current word to search input field.
+* `isearch:fill-cursor-word`: Fill current word to search input field.
 * `isearch:cancel`: Canceling search and close input panel.
 
 # How to use.
@@ -50,7 +50,7 @@ e.g.
   'ctrl-r': 'isearch:search-backward'
   'ctrl-cmd-r': 'isearch:search-backward'
   'ctrl-g': 'isearch:cancel'
-  'cmd-e':  'isearch:fill-current-word'
+  'cmd-e':  'isearch:fill-cursor-word'
 ```
 
 My setting, very experimental.  

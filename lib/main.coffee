@@ -2,9 +2,7 @@
 _ = require 'underscore-plus'
 settings = require './settings'
 
-UI = null
 Match = null
-Matches = null
 
 module.exports =
   subscriptions: null
@@ -19,35 +17,40 @@ module.exports =
 
   deactivate: ->
     @subscriptions.dispose()
-    @cursorDecoration?.getMarker().destroy()
+    # @cursorDecoration?.getMarker().destroy()
 
-  clear: ->
+  cancel: ->
+    @matchCursor?.scroll()
+    @matchCursor?.destroy()
+    @matchCursor = null
+    @reset()
+
+  land: ->
+    @matches?[@index]?.land()
+    @matchCursor.destroy()
+    @matchCursor = null
+    @reset()
+
+  reset: ->
     @index = 0
     @lastCurrent = null
     for match in @matches ? []
       match.destroy()
     @matches = []
 
-  decide: ->
-    @matches[@index].land()
-
-  restorePosition: ->
-    @matchCursor?.scroll()
-
-  finish: ->
-    @matchCursor = null
-    # [FIXME] fold rows extent to multiple row so `is` check is not correct.
-    for bufferRow in @unFoldedRows ? []
-      unless bufferRow is @getCursorBufferPosition().row
-        @editor.foldBufferRow(bufferRow)
+  # finish: ->
+  #   @matchCursor = null
+  #   # [FIXME] fold rows extent to multiple row so `is` check is not correct.
+  #   for bufferRow in @unFoldedRows ? []
+  #     unless bufferRow is @getCursorBufferPosition().row
+  #       @editor.foldBufferRow(bufferRow)
 
   start: (direction) ->
     ui = @getUI()
-
     unless ui.isVisible()
       # Initial invocation
-      @editor = @getEditor()
       @matchCursor = null
+      @editor = @getEditor()
       ui.setDirection direction
       ui.focus()
     else
@@ -78,7 +81,11 @@ module.exports =
     match
 
   search: (direction, text) ->
-    @clear()
+    @reset()
+    unless text
+      @updateFoundCount 0
+      return
+
     pattern = @getRegExp text
 
     @maches = []
@@ -92,8 +99,10 @@ module.exports =
       return
 
     @matchCursor ?= @getMatchForCursor()
+    console.log @matchCursor.toArray()
 
     @index = _.sortedIndex @matches, @matchCursor, (match) -> match.toArray()
+    console.log @index
 
     if @index isnt -1
       if direction is 'backward'

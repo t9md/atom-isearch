@@ -24,62 +24,51 @@ class UI extends HTMLElement
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor.isearch',
-      'isearch:cancel':            => @cancel()
-      'isearch:fill-current-word': => @fillCurrentWord()
-      'core:cancel':               => @cancel()
-      'core:confirm':              => @confirm()
-      # 'isearch:confirm':           => @confirm()
+      'isearch:cancel':           => @cancel()
+      'isearch:fill-cursor-word': => @fillCursorWord()
+      'core:cancel':              => @cancel()
+      'core:confirm':             => @confirm()
 
     @handleInput()
     this
 
   focus: ->
+    @editor.setText ''
     @cleared = false
     @panel.show()
     @editorView.focus()
 
-  setDirection: (direction) ->
-    @direction = direction
-
+  setDirection: (@direction) ->
   getDirection: ->
     @direction
 
-
-  reset: ->
-    @editor.setText ''
-
-  fillCurrentWord: ->
+  fillCursorWord: ->
     @editor.setText @main.editor.getWordUnderCursor()
+
+  isVisible: ->
+    @panel.isVisible()
 
   setFoundCount: (@foundCount) ->
 
   refresh: ->
     @foundCountContainer.textContent = @foundCount
 
-  isVisible: ->
-    @panel.isVisible()
-
   isCleared: ->
     @cleared
 
   clear: ->
-    if @isCleared()
-      return
+    return if @isCleared()
     @cleared = true
-    @reset()
-    @main.clear()
-    @main.cursorDecoration?.getMarker().destroy()
-    @main.cursorDecoration = null
     @panel.hide()
     atom.workspace.getActivePane().activate()
 
   confirm: ->
-    @main.decide()
+    @main.land()
     @clear()
 
   cancel: ->
+    @main.cancel()
     @clear()
-    @main.restorePosition()
 
   handleInput: ->
     @subscriptions = subs = new CompositeDisposable
@@ -87,24 +76,9 @@ class UI extends HTMLElement
       text = @editor.getText()
       if text
         @main.search @getDirection(), text
-      else
-        @main.clear()
-        @setFoundCount 0
-      @refresh()
 
     subs.add @editor.onDidDestroy =>
       subs.dispose()
-
-  hideOtherBottomPanels: ->
-    @hiddenPanels = []
-    for panel in atom.workspace.getBottomPanels()
-      if panel.isVisible()
-        panel.hide()
-        @hiddenPanels.push panel
-
-  showOtherBottomPanels: ->
-    panel.show() for panel in @hiddenPanels
-    @hiddenPanels = []
 
   destroy: ->
     @panel.destroy()
