@@ -19,23 +19,60 @@ module.exports =
     @subscriptions.dispose()
 
   clear: ->
-    for marker in @markers ? []
-      marker.destroy()
+    for decoration in @decorations ? []
+      decoration.getMarker().destroy()
+
+  updateDecoration: (decoration, type='') ->
+    klass = 'isearch-found'
+    klass += " #{type}" if type
+    decoration.setProperties
+      type: 'highlight'
+      class: klass
+
+  setCurrent: (decoration) ->
+    decoration.setProperties
+      type: 'highlight'
+      class: 'isearch-found'
+
+  updateCurrent: (direction, index) ->
+    switch direction
+      when 'forward'
+        unless index is (@decorations.length - 1)
+          @updateDecoration @decorations[index]
+          @updateDecoration @decorations[index+1], 'current'
+      when 'backward'
+        unless index is 0
+          @updateDecoration @decorations[index]
+          @updateDecoration @decorations[index-1], 'current'
+
+  adjustScroll: (direction, index) ->
+    point = null
+    switch direction
+      when 'forward'
+        unless index is @decorations.length - 1
+          point = @decorations[index+1].getMarker().getStartBufferPosition()
+      when 'backward'
+        unless index is 0
+          point = @decorations[index-1].getMarker().getStartBufferPosition()
+      when 'init'
+        point = @decorations[index].getMarker().getStartBufferPosition()
+    if point
+      @editor.setCursorBufferPosition point, autoscroll: false
+      @editor.scrollToCursorPosition()
 
   start: (direction) ->
-    "isearch-found current"
     input = @getInput()
     if input.panel.isVisible()
-      index = _.findIndex @decorations, (decoration) ->
+      currentDecoration = _.detect @decorations, (decoration) ->
         decoration.getProperties().class is 'isearch-found current'
-      @decorations[index].setProperties class: 'isearch-found'
-      @decorations[index+1].setProperties class: 'isearch-found current'
-        # console.log marker.getProperties()
-      console.log "hello!"
+      index = @decorations.indexOf currentDecoration
+      @adjustScroll direction, index
+      @updateCurrent direction, index
     else
       @editor = @getEditor()
-      @getInput().setDirection direction
-      @getInput().focus()
+      @currentPosition = @editor.getCursorBufferPosition()
+      input.setDirection direction
+      input.focus()
 
   getInput: ->
     return @input if @input
@@ -47,37 +84,31 @@ module.exports =
   search: (direction, text) ->
     @clear()
     pattern = ///#{_.escapeRegExp(text)}///g
-    @markers = []
-    @decorations = []
 
-    @scan direction, pattern, ({range}) =>
-      marker = @editor.markScreenRange range,
+    ranges = []
+    @editor.scan pattern, ({range}) =>
+      ranges.push range
+
+    @decorations = []
+    for range in ranges
+      marker = @editor.markBufferRange range,
         invalidate: 'never'
         persistent: false
 
-      decoration = @editor.decorateMarker marker,
+      @decorations.push @editor.decorateMarker marker,
         type: 'highlight'
-        class: if @markers.length then 'isearch-found' else 'isearch-found current'
-      @markers.push marker
-      @decorations.push decoration
+        class: 'isearch-found'
 
-    @input.setFoundCount @markers.length
+    [@backwards, @forwards] = _.partition @decorations, (decoration) =>
+      decoration.getMarker().getStartBufferPosition().isLessThan @currentPosition
 
-  update: (direction) ->
-    # _.findIndex @markers,
-    console.log @markers[0]
-    console.log @markers.getProperties()
-    # @markers.
+    if direction is 'forward'
+      index = @decorations.indexOf _.first(@forwards)
+    else if direction is 'backward'
+      index = @decorations.indexOf _.last(@backwards)
+    @updateDecoration @decorations[index], 'current'
+    @adjustScroll 'init', index
+    @input.setFoundCount "total=#{@decorations.length} current=#{index+1}"
 
   getEditor: ->
     atom.workspace.getActiveTextEditor()
-
-  scan: (direction, pattern, callback) ->
-    cursorPosition = @editor.getCursorBufferPosition()
-    if direction is 'forward'
-      scanMethod = 'scanInBufferRange'
-      scanRange = [cursorPosition, new Point(@editor.getLastBufferRow(), Infinity)]
-    else
-      scanMethod = 'backwardsScanInBufferRange'
-      scanRange = [cursorPosition, new Point(0, 0)]
-    @editor[scanMethod] pattern, scanRange, callback

@@ -24,8 +24,9 @@ class Input extends HTMLElement
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor.isearch',
       'isearch:cancel': => @cancel()
+      'isearch:fill-current-word': => @fillCurrentWord()
       'core:cancel':    => @cancel()
-      # 'blur':           => @cancel()
+      'blur':           => @cancel()
 
     @handleInput()
     this
@@ -42,6 +43,9 @@ class Input extends HTMLElement
 
   reset: ->
     @editor.setText ''
+
+  fillCurrentWord: ->
+    @editor.setText @main.editor.getWordUnderCursor()
 
   setFoundCount: (@foundCount) ->
 
@@ -61,6 +65,7 @@ class Input extends HTMLElement
       if text
         @main.search @getDirection(), text
       else
+        @main.clear()
         @setFoundCount 0
       @refresh()
 

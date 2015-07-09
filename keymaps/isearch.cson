@@ -2,5 +2,6 @@
   'ctrl-s': 'isearch:search-forward'
   'ctrl-cmd-r': 'isearch:search-backward'
 
-'atom-text-editor.isearch':
+'.platform-darwin atom-text-editor.isearch':
   'ctrl-g': 'isearch:cancel'
+  'cmd-e': 'isearch:fill-current-word'
