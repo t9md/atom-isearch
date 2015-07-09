@@ -30,7 +30,12 @@ module.exports =
     else
       # invocation with UI already displayed
       return unless @matches.length
-      @updateCurrent @matches[@updateIndex(direction)]
+      unless @isExceedingBoundry(direction)
+        # This mean last search was 'backward' and not found for backward direction.
+        # Adjusting index make first entry(index=0) current.
+        if direction is 'forward' and not @lastCurrent
+          @index -= 1
+        @updateCurrent @matches[@updateIndex(direction)]
       ui.refresh()
 
   getUI: ->
@@ -51,18 +56,18 @@ module.exports =
     return unless @matches.length
 
     @matchCursor ?= @getMatchForCursor()
-    index = _.sortedIndex @matches, @matchCursor, (match) ->
+    @index = _.sortedIndex @matches, @matchCursor, (match) ->
       match.getScore()
-    console.log index
 
-    # console.log index
-    # [FIXME] BUG! Need to be fixed
-    if direction is 'forward'
-      @index = index
-    else
-      # Need decrement index for 'backward' and also boundry check.
-      @updateIndex direction
-    @updateCurrent @matches[@index]
+    unless @isExceedingBoundry(direction)
+      @updateCurrent @matches[@index]
+
+  isExceedingBoundry: (direction) ->
+    switch direction
+      when 'forward'
+        @index is @matches.length
+      when 'backward'
+        @index is 0
 
   updateCurrent: (match) ->
     @lastCurrent?.setNormal()
@@ -105,7 +110,10 @@ module.exports =
     @index
 
   getCount: ->
-    { total: @matches.length, current: @index+1 }
+    if 0 < @index < @matches.length
+      { total: @matches.length, current: @index+1 }
+    else
+      { total: @matches.length, current: 0 }
 
   # Utility
   # -------------------------

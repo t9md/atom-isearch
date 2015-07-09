@@ -1,3 +1,6 @@
+## 0.1.3 - FIX
+- Precise boundary check when search direction exceed last entry.
+
 ## 0.1.2 - Improve
 - Support WildChar
 - Refactoring
