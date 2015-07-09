@@ -1,6 +1,7 @@
 module.exports =
 class Match
-  constructor: (@editor, @range) ->
+  constructor: (@editor, {@range, class: klass}) ->
+    @decorate klass
 
   decorate: (klass) ->
     @marker = @editor.markBufferRange @range,

@@ -9,4 +9,4 @@ module.exports = new ConfigPlus 'isearch',
     order:   1
     type:    'string'
     default: ''
-    description: "Use this char as wild card `*`"
+    description: "Use this char as wild card char"

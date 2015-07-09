@@ -51,8 +51,7 @@ module.exports =
     return unless text
 
     @editor.scan @getRegExp(text), ({range}) =>
-      match = new Match(@editor, range)
-      match.decorate 'isearch-found'
+      match = new Match(@editor, {range, class: 'isearch-found'})
       (@matches ?= []).push match
 
     return unless @matches.length
@@ -60,8 +59,8 @@ module.exports =
     @matchCursor ?= @getMatchForCursor()
     @index = _.sortedIndex @matches, @matchCursor, (match) ->
       match.getScore()
-
     unless @isExceedingBoundry(direction)
+      @index -= 1 if direction is 'backward'
       @updateCurrent @matches[@index]
 
   isExceedingBoundry: (direction) ->
@@ -78,11 +77,9 @@ module.exports =
     @lastCurrent = match
 
   getMatchForCursor: ->
-    range = @editor.getSelectedBufferRange()
-    # [NOTE] One column translation is not enough for 2 space softtab
-    match = new Match(@editor, range.translate([0, 0], [0, 2]))
-    match.decorate 'isearch-cursor'
-    match
+    start = @editor.getCursorBufferPosition()
+    end = start.translate([0, 1])
+    new Match @editor,{range: [start, end], class: 'isearch-cursor'}
 
   cancel: ->
     @setEditorState @editor, @editorState if @editorState?
@@ -131,9 +128,7 @@ module.exports =
     ///#{pattern}///ig
 
   getEditorState: (editor) ->
-    bufferRanges: editor.getSelectedBufferRanges()
     scrollTop: editor.getScrollTop()
 
-  setEditorState: (editor, {bufferRanges, scrollTop}) ->
-    editor.setSelectedBufferRanges bufferRanges
+  setEditorState: (editor, {scrollTop}) ->
     editor.setScrollTop scrollTop

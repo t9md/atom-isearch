@@ -1,3 +1,6 @@
+## 0.1.5 - Improve
+- [FIX] initial backward search cause error in some situation.
+
 ## 0.1.4 - Improve
 - Select to target if started with selection.
 - Restore screenTop and selection when canceled.
