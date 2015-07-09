@@ -90,6 +90,7 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [x] Cleanup code.
 * [x] Support wild card search.
 * [x] Ensure not leaking mark(need refactoring beforehand).
+* [ ] integrate vim-mode's `vim-mode:repeat-search`.
 * [ ] Make style customizable.
 * [ ] Integrate to [smalls](https://atom.io/packages/smalls).
 * [ ] Put multi cursor.

@@ -1,3 +1,6 @@
+## [PRE] 0.1.6 - Improve
+- Removed unused keymap directory.
+
 ## 0.1.5 - Improve
 - [FIX] initial backward search cause error in some situation.
 
