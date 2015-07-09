@@ -2,6 +2,8 @@
 
 Incremental search.
 
+![gif](https://raw.githubusercontent.com/t9md/t9md/f7f57e9b165c36d4fc3bd6bc3dd10614264f189f/img/atom-isearch.gif)
+
 # Development State
 Very Alpha.
 
