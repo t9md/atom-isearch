@@ -1,4 +1,4 @@
-## [PRE] 0.1.2 - Improve
+## 0.1.2 - Improve
 - Support WildChar
 - Refactoring
 
