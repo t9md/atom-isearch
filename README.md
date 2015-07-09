@@ -77,7 +77,7 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [ ] Use space as wild card `*`?
 * [ ] Ensure not leaking mark(need refactoring beforehand).
 * [ ] Make style customizable.
-* [ ] Integrate to [smalls](https://atom.io/packages/jumpy).
+* [ ] Integrate to [smalls](https://atom.io/packages/smalls).
 * [ ] Put multi cursor.
 * [ ] Excursion mode to move around matchings by vim-like jkhl?
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
