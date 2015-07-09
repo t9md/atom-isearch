@@ -15,7 +15,7 @@ class Match
     screenRange = @marker.getScreenRange()
     @editor.scrollToScreenRange screenRange
     bufferRow = @marker.getStartBufferPosition().row
-    # [TODO] restor fold after land() or cancel()
+    # [TODO] restore fold after land() or cancel()
     if @editor.isFoldedAtBufferRow(bufferRow)
       @editor.unfoldBufferRow(bufferRow)
 

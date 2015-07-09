@@ -31,11 +31,19 @@ class UI extends HTMLElement
 
   focus: ->
     @cleared = false
-    @matchCount = 0
     @editor.setText ''
 
     @panel.show()
     @editorView.focus()
+
+  handleInput: ->
+    @subscriptions = subs = new CompositeDisposable
+    subs.add @editor.onDidChange =>
+      @main.search @getDirection(), @editor.getText()
+      @refresh()
+
+    subs.add @editor.onDidDestroy =>
+      subs.dispose()
 
   setDirection: (@direction) ->
   getDirection: ->
@@ -47,10 +55,11 @@ class UI extends HTMLElement
   isVisible: ->
     @panel.isVisible()
 
-  setMatchCount: (@matchCount) ->
-
   refresh: ->
-    @matchCountContainer.textContent = @matchCoutn
+    {total, current} = @main.getCount()
+    content = "Total: #{total}"
+    content += ", Current: #{current}" if total isnt 0
+    @matchCountContainer.textContent = content
 
   isCleared: ->
     @cleared
@@ -68,16 +77,6 @@ class UI extends HTMLElement
   cancel: ->
     @main.cancel()
     @clear()
-
-  handleInput: ->
-    @subscriptions = subs = new CompositeDisposable
-    subs.add @editor.onDidChange =>
-      text = @editor.getText()
-      if text
-        @main.search @getDirection(), text
-
-    subs.add @editor.onDidDestroy =>
-      subs.dispose()
 
   destroy: ->
     @panel.destroy()

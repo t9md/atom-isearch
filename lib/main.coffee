@@ -17,7 +17,59 @@ module.exports =
 
   deactivate: ->
     @subscriptions.dispose()
-    # @cursorDecoration?.getMarker().destroy()
+    @cancel()
+
+  start: (direction) ->
+    ui = @getUI()
+    unless ui.isVisible()
+      # Initial invocation
+      @matchCursor = null
+      @editor = atom.workspace.getActiveTextEditor()
+      ui.setDirection direction
+      ui.focus()
+    else
+      # invocation with UI already displayed
+      return unless @matches.length
+      @updateCurrent @matches[@updateIndex(direction)]
+      ui.refresh()
+
+  getUI: ->
+    return @ui if @ui
+    @ui = new (require './ui')
+    @ui.initialize this
+    @ui
+
+  search: (direction, text) ->
+    @reset()
+    return unless text
+
+    @editor.scan @getRegExp(text), ({range}) =>
+      match = new Match(@editor, range)
+      match.decorate 'isearch-found'
+      (@matches ?= []).push match
+
+    return unless @matches.length
+
+    @matchCursor ?= @getMatchForCursor()
+    index = _.sortedIndex @matches, @matchCursor, (match) ->
+      match.getScore()
+
+    # [FIXME] BUG! Need to be fixed
+    @index = if direction is 'backward' then index - 1 else index
+    @updateCurrent @matches[@index]
+
+  updateCurrent: (match) ->
+    @lastCurrent?.setNormal()
+    match.setCurrent()
+    match.scroll()
+    @lastCurrent = match
+
+  getMatchForCursor: ->
+    range = @editor.getSelectedBufferRange()
+    # [NOTE] One column translation is not enough for 2 space softtab
+    match = new Match(@editor, range.translate([0, 0], [0, 2]))
+    match.decorate 'isearch-cursor'
+    match
 
   cancel: ->
     @matchCursor?.scroll()
@@ -38,95 +90,19 @@ module.exports =
       match.destroy()
     @matches = []
 
-  # finish: ->
-  #   @matchCursor = null
-  #   # [FIXME] fold rows extent to multiple row so `is` check is not correct.
-  #   for bufferRow in @unFoldedRows ? []
-  #     unless bufferRow is @getCursorBufferPosition().row
-  #       @editor.foldBufferRow(bufferRow)
-  getIndex: (direction) ->
-    if direction is 'forward'
-      Math.min(@matches.length-1, @index+1)
-    else
-      Math.max(0, @index-1)
-
-  start: (direction) ->
-    ui = @getUI()
-    unless ui.isVisible()
-      # Initial invocation
-      @matchCursor = null
-      @editor = @getEditor()
-      ui.setDirection direction
-      ui.focus()
-    else
-      # invocation with UI already displayed
-      return unless @matches.length
-      @index = @getIndex direction
-      @updateCurrent @matches[@index]
-      @updateMatchCount @matches.length, @index
-
-  getUI: ->
-    return @ui if @ui
-    @ui = new (require './ui')
-    @ui.initialize this
-    @ui
-
-  getMatchForCursor: ->
-    range = @editor.getSelectedBufferRange()
-    # [NOTE] One column translation is not enough for 2 space softtab
-    match = new Match(@editor, range.translate([0, 0], [0, 2]))
-    match.decorate 'isearch-cursor'
-    match
-
-  search: (direction, text) ->
-    @reset()
-    unless text
-      @updateMatchCount 0
-      return
-
-    pattern = @getRegExp text
-
-    @maches = []
-    @editor.scan pattern, ({range}) =>
-      match = new Match(@editor, range)
-      match.decorate 'isearch-found'
-      @matches.push match
-
-    if _.isEmpty @matches
-      @updateMatchCount 0
-      return
-
-    @matchCursor ?= @getMatchForCursor()
-    index = _.sortedIndex @matches, @matchCursor, (match) ->
-      match.getScore()
-
-    @index = if direction is 'backward'
-        index - 1
+  updateIndex: (direction) ->
+    @index =
+      if direction is 'forward'
+        Math.min(@matches.length-1, @index+1)
       else
-        index
+        Math.max(0, @index-1)
+    @index
 
-    @updateCurrent @matches[@index]
-    @updateMatchCount @matches.length, @index+1
-
-  updateCurrent: (match) ->
-    @lastCurrent?.setNormal()
-    match.setCurrent()
-    @lastCurrent = match
-    match.scroll()
-
-  updateMatchCount: (total, current) ->
-    if total isnt 0
-      data = "Total: #{total}, Current: #{current}"
-    else
-      data = 'Total: 0'
-    @getUI().setMatchCount data
-    @getUI().refresh()
+  getCount: ->
+    { total: @matches.length, current: @index+1 }
 
   # Utility
   # -------------------------
-  getEditor: ->
-    atom.workspace.getActiveTextEditor()
-
   getRegExp: (text) ->
     if settings.get('useWildChar') and wildChar = settings.get('wildChar')
       pattern = text.split(wildChar).map (pattern) ->
