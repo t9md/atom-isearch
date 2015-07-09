@@ -23,6 +23,7 @@ module.exports =
 
   clear: ->
     @index = 0
+    @lastCurrent = null
     for match in @matches ? []
       match.destroy()
     @matches = []
@@ -32,8 +33,7 @@ module.exports =
 
   restorePosition: ->
     @matchCursor?.scroll()
-    # @editor.setCursorBufferPosition @cursorPosition
-    # @finish()
+
   finish: ->
     @matchCursor = null
     # [FIXME] fold rows extent to multiple row so `is` check is not correct.
@@ -43,26 +43,24 @@ module.exports =
 
   start: (direction) ->
     ui = @getUI()
-    if ui.panel.isVisible()
-      return unless @matches.length
 
-      if direction is 'forward'
-        @index = Math.min(@matches.length-1, @index+1)
-      else if direction is 'backward'
-        @index = Math.max(0, @index-1)
-
-      @matches[@index].setCurrent()
-      @matches[@index].scroll()
-
-      @updateFoundCount @matches.length, @index
-      ui.refresh()
-
-    else
-      @matchCursor = null
+    unless ui.isVisible()
+      # Initial invocation
       @editor = @getEditor()
-      @cursorPosition = @editor.getCursorBufferPosition()
+      @matchCursor = null
       ui.setDirection direction
       ui.focus()
+    else
+      # invocation with UI already displayed
+      return unless @matches.length
+      @index =
+        if direction is 'forward'
+          Math.min(@matches.length-1, @index+1)
+        else
+          Math.max(0, @index-1)
+
+      @updateCurrent @matches[@index]
+      @updateFoundCount @matches.length, @index
 
   getUI: ->
     return @ui if @ui
@@ -85,29 +83,29 @@ module.exports =
 
     @maches = []
     @editor.scan pattern, ({range}) =>
-      @matches.push new Match(@editor, range)
-      # ranges.push range
+      match = new Match(@editor, range)
+      match.decorate 'isearch-found'
+      @matches.push match
 
     if _.isEmpty @matches
       @updateFoundCount 0
-      @getUI().refresh()
       return
 
     @matchCursor ?= @getMatchForCursor()
-    for match in @matches
-      match.decorate 'isearch-found'
 
-    @index = _.sortedIndex @matches, @matchCursor, (match) ->
-      match.toArray()
-    console.log @index
+    @index = _.sortedIndex @matches, @matchCursor, (match) -> match.toArray()
 
     if @index isnt -1
       if direction is 'backward'
         @index -= 1
-      @matches[@index].setCurrent()
-      @matches[@index].scroll()
-
+      @updateCurrent @matches[@index]
     @updateFoundCount @matches.length, @index
+
+  updateCurrent: (match) ->
+    @lastCurrent?.setNormal()
+    match.setCurrent()
+    @lastCurrent = match
+    match.scroll()
 
   updateFoundCount: (total, current) ->
     if total isnt 0
@@ -115,6 +113,7 @@ module.exports =
     else
       data = 'Total: 0'
     @getUI().setFoundCount data
+    @getUI().refresh()
 
   # Utility
   # -------------------------

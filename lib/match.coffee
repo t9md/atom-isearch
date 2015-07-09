@@ -30,6 +30,11 @@ class Match
       decoration.getMarker().destroy()
     , 150
 
+  setNormal: ->
+    @decoration.setProperties
+      type: 'highlight'
+      class: 'isearch-found'
+
   setCurrent: ->
     @decoration.setProperties
       type: 'highlight'

@@ -56,6 +56,9 @@ class UI extends HTMLElement
   refresh: ->
     @foundCountContainer.textContent = @foundCount
 
+  isVisible: ->
+    @panel.isVisible()
+
   isCleared: ->
     @cleared
 
