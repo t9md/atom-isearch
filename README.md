@@ -97,4 +97,4 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
 * [ ] Performance improve, delay decoration for entry out of screen?
 * [ ] Change color with `match`, `nomatch`, `bottom`, `top`?
-* [ ] Restore screenTop, screenLeft, fold when canceled.
+* [x] Restore screenTop, screenLeft, fold when canceled.

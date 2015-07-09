@@ -71,7 +71,7 @@ class UI extends HTMLElement
     atom.workspace.getActivePane().activate()
 
   confirm: ->
-    @main.land()
+    @main.land @getDirection()
     @clear()
 
   cancel: ->

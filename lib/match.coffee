@@ -44,9 +44,13 @@ class Match
     {row, column} = @marker.getStartBufferPosition()
     row * 1000 + column
 
-  land: ->
+  land: (direction) ->
     point = @marker.getStartBufferPosition()
-    @editor.setCursorBufferPosition point
+    if (@editor.getLastSelection().isEmpty())
+      @editor.setCursorBufferPosition point
+    else
+      point = @marker.getEndBufferPosition() if direction is 'forward'
+      @editor.selectToBufferPosition point
 
   destroy: ->
     @marker?.destroy()

@@ -25,10 +25,12 @@ module.exports =
       # Initial invocation
       @matchCursor = null
       @editor = atom.workspace.getActiveTextEditor()
+      @editorState = @getEditorState @editor
       ui.setDirection direction
       ui.focus()
     else
       # invocation with UI already displayed
+      ui.setDirection direction
       return unless @matches.length
       unless @isExceedingBoundry(direction)
         # This mean last search was 'backward' and not found for backward direction.
@@ -83,13 +85,14 @@ module.exports =
     match
 
   cancel: ->
-    @matchCursor?.scroll()
+    @setEditorState @editor, @editorState if @editorState?
+    @editorState = null
     @matchCursor?.destroy()
     @matchCursor = null
     @reset()
 
-  land: ->
-    @matches?[@index]?.land()
+  land: (direction) ->
+    @matches?[@index]?.land direction
     @matchCursor.destroy()
     @matchCursor = null
     @reset()
@@ -126,3 +129,11 @@ module.exports =
       pattern = _.escapeRegExp(text)
 
     ///#{pattern}///ig
+
+  getEditorState: (editor) ->
+    bufferRanges: editor.getSelectedBufferRanges()
+    scrollTop: editor.getScrollTop()
+
+  setEditorState: (editor, {bufferRanges, scrollTop}) ->
+    editor.setSelectedBufferRanges bufferRanges
+    editor.setScrollTop scrollTop
