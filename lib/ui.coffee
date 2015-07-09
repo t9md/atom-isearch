@@ -1,9 +1,9 @@
 {CompositeDisposable} = require 'atom'
 
-class Input extends HTMLElement
+class UI extends HTMLElement
   createdCallback: ->
     @hiddenPanels = []
-    @classList.add 'isearch-input'
+    @classList.add 'isearch-ui'
     @container = document.createElement 'div'
     @foundCountContainer = document.createElement 'div'
     @container.className = 'editor-container'
@@ -109,6 +109,6 @@ class Input extends HTMLElement
     @remove()
 
 module.exports =
-document.registerElement 'isearch-input',
+document.registerElement 'isearch-ui',
   extends: 'div'
-  prototype: Input.prototype
+  prototype: UI.prototype

@@ -18,10 +18,11 @@ I may change frequently style and keymap.
 * Don't change cursor position unless you confirm(important to [cursor-history](https://atom.io/packages/cursor-history) like pakcage).
 * Fill word under cursor to search input are with keymap.
 * Highlight original cursor position while searching and flash current matching.
+* Can use wildcard to reduce keytype, and can configure wildchar.
 
 # Commands
 
-* `isearch:search-forward`: Search forward.
+* `isearch:search-eorward`: Search forward.
 * `isearch:search-backward`: Search backward.
 * `isearch:fill-current-word`: Fill current word to search input field.
 * `isearch:cancel`: Canceling search and close input panel.
@@ -83,3 +84,4 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
 * [ ] Performance improve, delay decoration for entry out of screen?
 * [ ] Change color with `match`, `nomatch`, `bottom`, `top`?
+* [ ] Restore screenTop, screenLeft whe canceled.

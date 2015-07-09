@@ -9,7 +9,14 @@
   "engines": {
     "atom": ">=1.0.0 <2.0.0"
   },
+  "activationCommands": {
+    "atom-workspace": [
+      "isearch:search-forward",
+      "isearch:search-backward"
+    ]
+  },
   "dependencies": {
+    "atom-config-plus": "^0.1.2",
     "underscore-plus": "^1.6.6"
   }
 }

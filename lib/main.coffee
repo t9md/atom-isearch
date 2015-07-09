@@ -1,188 +1,132 @@
 {CompositeDisposable, Point} = require 'atom'
 _ = require 'underscore-plus'
+settings = require './settings'
 
-Input = null
+UI = null
+Match = null
+Matches = null
 
-# Don't move cursor until final decision.
-# Since cursor change fire `TextEditor::onDidChangeCursorPosition()`.
-# This may some impact to other packages which ovserve this event.
-
-# Fold is expanded and closed after sarch finished unless new position is within fold..
 module.exports =
   subscriptions: null
+  config: settings.config
 
   activate: ->
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-workspace',
       'isearch:search-forward':  => @start 'forward'
       'isearch:search-backward': => @start 'backward'
+      Match = require './match'
 
   deactivate: ->
     @subscriptions.dispose()
     @cursorDecoration?.getMarker().destroy()
 
-  # unFold: (row) ->
-  #   @editor.unfoldBufferRow(row)
-
   clear: ->
     @index = 0
-    for decoration in @decorations ? []
-      decoration.getMarker().destroy()
-    @decorations = []
-
-  updateDecoration: (decoration, type='') ->
-    klass = 'isearch-found'
-    klass += " #{type}" if type
-    decoration.setProperties
-      type: 'highlight'
-      class: klass
-
-  setCurrent: (decoration) ->
-    decoration.setProperties
-      type: 'highlight'
-      class: 'isearch-found'
-
-  updateCurrent: (direction, index) ->
-    current = null
-    switch direction
-      when 'forward'
-        unless index is (@decorations.length - 1)
-          @updateDecoration @decorations[index]
-          current = @decorations[index+1]
-      when 'backward'
-        unless index is 0
-          @updateDecoration @decorations[index]
-          current = @decorations[index-1]
-      when 'init'
-          current = @decorations[index]
-    if current
-      @updateDecoration current, 'current'
-    else
-      current = @decorations[index]
-    @flash current.getMarker()
-
-  adjustScroll: (direction, index) ->
-    deco = null
-    switch direction
-      when 'forward'
-        unless index is @decorations.length - 1
-          deco = @decorations[index+1]
-      when 'backward'
-        unless index is 0
-          deco = @decorations[index-1]
-      when 'init'
-        deco = @decorations[index]
-    if deco
-      marker = deco.getMarker()
-      screenRange = marker.getScreenRange()
-      @editor.scrollToScreenRange screenRange
-      bufferRow = marker.getStartBufferPosition().row
-      if @editor.isFoldedAtBufferRow(bufferRow)
-        @editor.unfoldBufferRow(bufferRow)
-        @unFoldedRows ?= []
-        @unFoldedRows.push bufferRow
+    for match in @matches ? []
+      match.destroy()
+    @matches = []
 
   decide: ->
-    point = @decorations[@index].getMarker().getStartBufferPosition()
-    @editor.setCursorBufferPosition point
+    @matches[@index].land()
 
   restorePosition: ->
-    @editor.setCursorBufferPosition @currentPosition
-    @finish()
-
+    @matchCursor?.scroll()
+    # @editor.setCursorBufferPosition @cursorPosition
+    # @finish()
   finish: ->
+    @matchCursor = null
     # [FIXME] fold rows extent to multiple row so `is` check is not correct.
     for bufferRow in @unFoldedRows ? []
       unless bufferRow is @getCursorBufferPosition().row
         @editor.foldBufferRow(bufferRow)
 
   start: (direction) ->
-    input = @getInput()
-    if input.panel.isVisible()
-      return unless @decorations.length
-      @adjustScroll direction, @index
-      @updateCurrent direction, @index
+    ui = @getUI()
+    if ui.panel.isVisible()
+      return unless @matches.length
+
       if direction is 'forward'
-        unless @index is (@decorations.length - 1)
-          @index += 1
+        @index = Math.min(@matches.length-1, @index+1)
       else if direction is 'backward'
-        unless @index is 0
-          @index -= 1
-      @updateFoundCount()
-      @input.refresh()
+        @index = Math.max(0, @index-1)
+
+      @matches[@index].setCurrent()
+      @matches[@index].scroll()
+
+      @updateFoundCount @matches.length, @index
+      ui.refresh()
+
     else
+      @matchCursor = null
       @editor = @getEditor()
-      @currentPosition = @editor.getCursorBufferPosition()
-      input.setDirection direction
-      input.focus()
+      @cursorPosition = @editor.getCursorBufferPosition()
+      ui.setDirection direction
+      ui.focus()
 
-  getInput: ->
-    return @input if @input
+  getUI: ->
+    return @ui if @ui
+    @ui = new (require './ui')
+    @ui.initialize this
+    @ui
 
-    @input = new (require './input')
-    @input.initialize this
-    @input
+  # [FIXME] should not cleare selections, need restore.
+  getMatchForCursor: ->
+    @editor.selectRight()
+    range = @editor.getSelectedBufferRange()
+    match = new Match(@editor, range)
+    @editor.clearSelections()
+    match.decorate 'isearch-cursor'
+    match
 
   search: (direction, text) ->
     @clear()
-    pattern = ///#{_.escapeRegExp(text)}///gi
+    pattern = @getRegExp text
 
-    ranges = []
+    @maches = []
     @editor.scan pattern, ({range}) =>
-      ranges.push range
+      @matches.push new Match(@editor, range)
+      # ranges.push range
 
-    unless ranges.length
-      @updateFoundCount()
-      @input.refresh()
+    if _.isEmpty @matches
+      @updateFoundCount 0
+      @getUI().refresh()
       return
 
-    unless @cursorDecoration
-      @editor.selectRight()
-      range = @editor.getSelectedBufferRange()
-      @editor.clearSelections()
-      @cursorDecoration = @decorate(range, 'isearch-cursor')
+    @matchCursor ?= @getMatchForCursor()
+    for match in @matches
+      match.decorate 'isearch-found'
 
-    @decorations = []
-    for range in ranges
-      @decorations.push @decorate(range, 'isearch-found')
+    @index = _.sortedIndex @matches, @matchCursor, (match) ->
+      match.toArray()
+    console.log @index
 
-    [@backwards, @forwards] = _.partition @decorations, (decoration) =>
-      decoration.getMarker().getStartBufferPosition().isLessThan @currentPosition
-
-    if direction is 'forward'
-      @index = @decorations.indexOf _.first(@forwards)
-    else if direction is 'backward'
-      @index = @decorations.indexOf _.last(@backwards)
     if @index isnt -1
-      @adjustScroll 'init', @index
-      @updateCurrent 'init', @index
-    @updateFoundCount()
+      if direction is 'backward'
+        @index -= 1
+      @matches[@index].setCurrent()
+      @matches[@index].scroll()
 
-  decorate: (range, klass) ->
-    marker = @editor.markBufferRange range,
-      invalidate: 'never'
-      persistent: false
+    @updateFoundCount @matches.length, @index
 
-    @editor.decorateMarker marker,
-      type: 'highlight'
-      class: klass
-
-  flash: (marker) ->
-    decoration = @editor.decorateMarker marker.copy(),
-      type: 'highlight'
-      class: 'isearch-flash'
-
-    setTimeout  ->
-      decoration.getMarker().destroy()
-    , 150
-
-  updateFoundCount: ->
-    total = @decorations.length
-    if total
-      data = "Total: #{total}, Current: #{@index+1}"
+  updateFoundCount: (total, current) ->
+    if total isnt 0
+      data = "Total: #{total}, Current: #{current}"
     else
       data = 'Total: 0'
-    @input.setFoundCount data
+    @getUI().setFoundCount data
 
+  # Utility
+  # -------------------------
   getEditor: ->
     atom.workspace.getActiveTextEditor()
+
+  getRegExp: (text) ->
+    if settings.get('useWildChar') and wildChar = settings.get('wildChar')
+      pattern = text.split(wildChar).map (pattern) ->
+        _.escapeRegExp(pattern)
+      .join('.*?')
+    else
+      pattern = _.escapeRegExp(text)
+
+    ///#{pattern}///ig
