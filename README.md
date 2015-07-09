@@ -53,6 +53,19 @@ e.g.
   'cmd-e':  'isearch:fill-cursor-word'
 ```
 
+* Emacs user
+
+```coffeescript
+'atom-text-editor':
+  'ctrl-s': 'isearch:search-forward'
+  'ctrl-r': 'isearch:search-backward'
+
+'.platform-darwin atom-text-editor.isearch':
+  'ctrl-s': 'isearch:search-forward'
+  'ctrl-r': 'isearch:search-backward'
+  'ctrl-g': 'isearch:cancel'
+```
+
 My setting, very experimental.  
 I'm ok that I can't search `[`, `]`, `;`.
 
@@ -74,8 +87,8 @@ I'm ok that I can't search `[`, `]`, `;`.
 
 # TODO
 
-* [ ] Cleanup code.
-* [ ] Use space as wild card `*`?
+* [x] Cleanup code.
+* [x] Support wild card search.
 * [ ] Ensure not leaking mark(need refactoring beforehand).
 * [ ] Make style customizable.
 * [ ] Integrate to [smalls](https://atom.io/packages/smalls).

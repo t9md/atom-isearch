@@ -1,5 +1,4 @@
-settings = require './settings'
-
+module.exports =
 class Match
   constructor: (@editor, @range) ->
 
@@ -16,10 +15,9 @@ class Match
     screenRange = @marker.getScreenRange()
     @editor.scrollToScreenRange screenRange
     bufferRow = @marker.getStartBufferPosition().row
+    # [TODO] restor fold after land() or cancel()
     if @editor.isFoldedAtBufferRow(bufferRow)
       @editor.unfoldBufferRow(bufferRow)
-      # @unFoldedRows ?= []
-      # @unFoldedRows.push bufferRow
 
   flash: ->
     decoration = @editor.decorateMarker @marker.copy(),
@@ -39,7 +37,6 @@ class Match
     @decoration.setProperties
       type: 'highlight'
       class: 'isearch-found current'
-
     @flash()
 
   # To determine sorted order by _.sortedIndex which use binary search from sorted list.
@@ -51,60 +48,5 @@ class Match
     point = @marker.getStartBufferPosition()
     @editor.setCursorBufferPosition point
 
-  # isFolded
-
   destroy: ->
     @marker?.destroy()
-
-# class Matches
-#   constructor: ->
-#     @maches = []
-#
-#   initialize: (@editor) ->
-#
-#   add: (range) ->
-#     @ranges.push ranges
-#
-#   decorate: (klass) ->
-#     for range in @ranges ? []
-#       marker = @editor.markBufferRange range,
-#         invalidate: 'never'
-#         persistent: false
-#
-#       @decorations.push @editor.decorateMarker marker,
-#         type: 'highlight'
-#         class: klass
-#
-#   getLength: ->
-#     @decorations.length
-#
-#   destroy: ->
-#     for decoration in @decorations ? []
-#       decoration.getMarker().destroy
-#     @decorations = []
-#
-#   updateDecoration: (decoration, type='') ->
-#     klass = 'isearch-found'
-#     klass += " #{type}" if type
-#     decoration.setProperties
-#       type: 'highlight'
-#       class: klass
-#
-#   isValid: ->
-#     if settings.get('excludeClosedBuffer')
-#       fs.existsSync(@URI) and @editor.isAlive()
-#     else
-#       fs.existsSync @URI
-#
-#   isDestroyed: ->
-#     @destroyed
-#
-#   inspect: ->
-#     path ?= require 'path'
-#     "#{@point}, #{path.basename(@URI)}"
-#
-#   isSameRow: (otherEntry) ->
-#     {URI, point} = otherEntry
-#     (URI is @URI) and (point.row is @point.row)
-
-module.exports = Match

@@ -11,9 +11,6 @@ class UI extends HTMLElement
     @appendChild @container
 
   initialize: (@main) ->
-    @cleared = false
-    @mode = null
-    @matchCount = 0
     @editorView = document.createElement 'atom-text-editor'
     @editorView.classList.add 'editor', 'isearch'
     @editorView.getModel().setMini true
@@ -33,8 +30,10 @@ class UI extends HTMLElement
     this
 
   focus: ->
-    @editor.setText ''
     @cleared = false
+    @matchCount = 0
+    @editor.setText ''
+
     @panel.show()
     @editorView.focus()
 
