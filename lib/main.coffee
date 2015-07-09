@@ -90,7 +90,7 @@ module.exports =
 
   land: (direction) ->
     @matches?[@index]?.land direction
-    @matchCursor.destroy()
+    @matchCursor?.destroy()
     @matchCursor = null
     @reset()
 

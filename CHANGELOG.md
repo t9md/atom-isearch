@@ -1,4 +1,5 @@
-## [PRE] 0.1.6 - Improve
+## 0.1.6 - Improve
+- [FIX] confirm without matching entry throw error.
 - Removed unused keymap directory.
 
 ## 0.1.5 - Improve
