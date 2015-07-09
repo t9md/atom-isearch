@@ -5,15 +5,15 @@ class UI extends HTMLElement
     @hiddenPanels = []
     @classList.add 'isearch-ui'
     @container = document.createElement 'div'
-    @foundCountContainer = document.createElement 'div'
+    @matchCountContainer = document.createElement 'div'
     @container.className = 'editor-container'
-    @appendChild @foundCountContainer
+    @appendChild @matchCountContainer
     @appendChild @container
 
   initialize: (@main) ->
     @cleared = false
     @mode = null
-    @foundCount = 0
+    @matchCount = 0
     @editorView = document.createElement 'atom-text-editor'
     @editorView.classList.add 'editor', 'isearch'
     @editorView.getModel().setMini true
@@ -48,10 +48,10 @@ class UI extends HTMLElement
   isVisible: ->
     @panel.isVisible()
 
-  setFoundCount: (@foundCount) ->
+  setMatchCount: (@matchCount) ->
 
   refresh: ->
-    @foundCountContainer.textContent = @foundCount
+    @matchCountContainer.textContent = @matchCoutn
 
   isCleared: ->
     @cleared

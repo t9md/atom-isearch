@@ -44,6 +44,11 @@ module.exports =
   #   for bufferRow in @unFoldedRows ? []
   #     unless bufferRow is @getCursorBufferPosition().row
   #       @editor.foldBufferRow(bufferRow)
+  getIndex: (direction) ->
+    if direction is 'forward'
+      Math.min(@matches.length-1, @index+1)
+    else
+      Math.max(0, @index-1)
 
   start: (direction) ->
     ui = @getUI()
@@ -56,14 +61,9 @@ module.exports =
     else
       # invocation with UI already displayed
       return unless @matches.length
-      @index =
-        if direction is 'forward'
-          Math.min(@matches.length-1, @index+1)
-        else
-          Math.max(0, @index-1)
-
+      @index = @getIndex direction
       @updateCurrent @matches[@index]
-      @updateFoundCount @matches.length, @index
+      @updateMatchCount @matches.length, @index
 
   getUI: ->
     return @ui if @ui
@@ -71,19 +71,17 @@ module.exports =
     @ui.initialize this
     @ui
 
-  # [FIXME] should not cleare selections, need restore.
   getMatchForCursor: ->
-    @editor.selectRight()
     range = @editor.getSelectedBufferRange()
-    match = new Match(@editor, range)
-    @editor.clearSelections()
+    # [NOTE] One column translation is not enough for 2 space softtab
+    match = new Match(@editor, range.translate([0, 0], [0, 2]))
     match.decorate 'isearch-cursor'
     match
 
   search: (direction, text) ->
     @reset()
     unless text
-      @updateFoundCount 0
+      @updateMatchCount 0
       return
 
     pattern = @getRegExp text
@@ -95,20 +93,20 @@ module.exports =
       @matches.push match
 
     if _.isEmpty @matches
-      @updateFoundCount 0
+      @updateMatchCount 0
       return
 
     @matchCursor ?= @getMatchForCursor()
-    console.log @matchCursor.toArray()
+    index = _.sortedIndex @matches, @matchCursor, (match) ->
+      match.getScore()
 
-    @index = _.sortedIndex @matches, @matchCursor, (match) -> match.toArray()
-    console.log @index
+    @index = if direction is 'backward'
+        index - 1
+      else
+        index
 
-    if @index isnt -1
-      if direction is 'backward'
-        @index -= 1
-      @updateCurrent @matches[@index]
-    @updateFoundCount @matches.length, @index
+    @updateCurrent @matches[@index]
+    @updateMatchCount @matches.length, @index+1
 
   updateCurrent: (match) ->
     @lastCurrent?.setNormal()
@@ -116,12 +114,12 @@ module.exports =
     @lastCurrent = match
     match.scroll()
 
-  updateFoundCount: (total, current) ->
+  updateMatchCount: (total, current) ->
     if total isnt 0
       data = "Total: #{total}, Current: #{current}"
     else
       data = 'Total: 0'
-    @getUI().setFoundCount data
+    @getUI().setMatchCount data
     @getUI().refresh()
 
   # Utility

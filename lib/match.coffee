@@ -42,8 +42,10 @@ class Match
 
     @flash()
 
-  toArray: ->
-    @marker.getStartBufferPosition().toArray()
+  # To determine sorted order by _.sortedIndex which use binary search from sorted list.
+  getScore: ->
+    {row, column} = @marker.getStartBufferPosition()
+    row * 1000 + column
 
   land: ->
     point = @marker.getStartBufferPosition()
