@@ -53,9 +53,15 @@ module.exports =
     @matchCursor ?= @getMatchForCursor()
     index = _.sortedIndex @matches, @matchCursor, (match) ->
       match.getScore()
+    console.log index
 
+    # console.log index
     # [FIXME] BUG! Need to be fixed
-    @index = if direction is 'backward' then index - 1 else index
+    if direction is 'forward'
+      @index = index
+    else
+      # Need decrement index for 'backward' and also boundry check.
+      @updateIndex direction
     @updateCurrent @matches[@index]
 
   updateCurrent: (match) ->
