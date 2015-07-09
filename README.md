@@ -5,7 +5,7 @@ Incremental search.
 ![gif](https://raw.githubusercontent.com/t9md/t9md/f7f57e9b165c36d4fc3bd6bc3dd10614264f189f/img/atom-isearch.gif)
 
 # Development State
-Very Alpha.
+~~Very Alpha~~. Beta
 
 [CAUTION] before Alpha or Beta state removed,
 I may change frequently style and keymap.
@@ -89,7 +89,7 @@ I'm ok that I can't search `[`, `]`, `;`.
 
 * [x] Cleanup code.
 * [x] Support wild card search.
-* [ ] Ensure not leaking mark(need refactoring beforehand).
+* [x] Ensure not leaking mark(need refactoring beforehand).
 * [ ] Make style customizable.
 * [ ] Integrate to [smalls](https://atom.io/packages/smalls).
 * [ ] Put multi cursor.
@@ -97,4 +97,4 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
 * [ ] Performance improve, delay decoration for entry out of screen?
 * [ ] Change color with `match`, `nomatch`, `bottom`, `top`?
-* [ ] Restore screenTop, screenLeft whe canceled.
+* [ ] Restore screenTop, screenLeft, fold when canceled.
