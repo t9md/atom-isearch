@@ -14,4 +14,15 @@ module.exports = new ConfigPlus 'isearch',
     order:   2
     type:    'boolean'
     default: true
-    description: "case-sensitive search if search text include capital letters"
+    description: "Case sensitive search if search text include capital letters"
+  historySize:
+    order:   3
+    type:    'integer'
+    default: 30
+    minimum: 1
+    max:     100
+  vimModeSyncSearchHistoy:
+    order:   4
+    type:    'boolean'
+    default: true
+    description: "Sync search history to vim-mode's search history if available"

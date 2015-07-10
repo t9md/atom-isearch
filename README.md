@@ -23,10 +23,20 @@ I may change frequently style and keymap.
 
 # Commands
 
-* `isearch:search-eorward`: Search forward.
+## atom-text-editor
+* `isearch:search-forward`: Search forward.
 * `isearch:search-backward`: Search backward.
+
+## atom-text-editor.isearch
+
+Following commands are available only on `atom-text-editor.isearch` scope.
+
 * `isearch:fill-cursor-word`: Fill current word to search input field.
 * `isearch:cancel`: Canceling search and close input panel.
+* `isearch:land-to-start`: Land to start of match.
+* `isearch:land-to-end`: Land to end of match.
+* `isearch:fill-history-prev`: Fill next search history.
+* `isearch:fill-history-next`: Fill previous search history.
 
 # How to use.
 
@@ -97,16 +107,21 @@ I'm ok that I can't search `[`, `]`, `;`.
 
 # TODO
 
-* [x] Cleanup code.
-* [x] Support wild card search.
-* [x] Ensure not leaking mark(need refactoring beforehand).
-* [x] integrate vim-mode's `vim-mode:repeat-search`.
-* [x] Support SmartCase search.
+* [ ] Input UI improvement.
 * [ ] Make style customizable.
-* [ ] Integrate to [smalls](https://atom.io/packages/smalls).
+* [ ] Label jump by integrating to [smalls](https://atom.io/packages/smalls).
 * [ ] Put multi cursor.
 * [ ] Excursion mode to move around matchings by vim-like jkhl?
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
 * [ ] Performance improve, delay decoration for entry out of screen?
 * [ ] Change color with `match`, `nomatch`, `bottom`, `top`?
-* [x] Restore screenTop, screenLeft, fold when canceled.
+* [ ] Restore fold when canceled.
+* [ ] Don't search when first char is wild card to avoid heavy computation?
+* [ ] Throttle search to reduce heavy search depending on number of line on editor?
+* [x] Cleanup code.
+* [x] Support wild card search.
+* [x] Ensure not leaking mark(need refactoring beforehand).
+* [x] integrate vim-mode's `vim-mode:repeat-search`.
+* [x] Support SmartCase search.
+* [x] Search history.
+* [x] Restore screenTop, screenLeft.

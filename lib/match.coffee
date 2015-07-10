@@ -1,3 +1,5 @@
+_ = require 'underscore-plus'
+
 module.exports =
 class Match
   constructor: (@editor, {@range, class: klass}) ->
@@ -45,8 +47,9 @@ class Match
     {row, column} = @marker.getStartBufferPosition()
     row * 1000 + column
 
-  land: (direction) ->
-    point = @marker.getStartBufferPosition()
+  land: (direction, where) ->
+    where = _.capitalize(where) # 'Start' or 'End'
+    point = @marker["get#{where}BufferPosition"]()
     if (@editor.getLastSelection().isEmpty())
       @editor.setCursorBufferPosition point
     else

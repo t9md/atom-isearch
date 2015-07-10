@@ -7,15 +7,18 @@ Match = null
 module.exports =
   subscriptions: null
   config: settings.config
+  searchHistory: null
 
   activate: ->
     Match = require './match'
+    @searchHistory = []
     @subscriptions = new CompositeDisposable
-    @subscriptions.add atom.commands.add 'atom-workspace',
+    @subscriptions.add atom.commands.add 'atom-text-editor',
       'isearch:search-forward':  => @start 'forward'
       'isearch:search-backward': => @start 'backward'
 
   deactivate: ->
+    @searchHistory = null
     @subscriptions.dispose()
     @cancel()
 
@@ -24,7 +27,9 @@ module.exports =
     unless ui.isVisible()
       # Initial invocation
       @matchCursor = null
+      @searchHistoryIndex = -1
       @editor = atom.workspace.getActiveTextEditor()
+      @vimState = @vimModeService?.getEditorState(@editor)
       @editorState = @getEditorState @editor
       ui.setDirection direction
       ui.focus()
@@ -52,7 +57,7 @@ module.exports =
 
     @editor.scan @getRegExp(text), ({range}) =>
       match = new Match(@editor, {range, class: 'isearch-found'})
-      (@matches ?= []).push match
+      @matches.push match
 
     return unless @matches.length
 
@@ -88,8 +93,8 @@ module.exports =
     @matchCursor = null
     @reset()
 
-  land: (direction) ->
-    @matches?[@index]?.land direction
+  land: (direction, where) ->
+    @matches?[@index]?.land direction, where
     @matchCursor?.destroy()
     @matchCursor = null
     @reset()
@@ -109,11 +114,36 @@ module.exports =
         Math.max(0, @index-1)
     @index
 
+  # Accessed from UI
+  # -------------------------
   getCount: ->
     if 0 < @index < @matches.length
       { total: @matches.length, current: @index+1 }
     else
       { total: @matches.length, current: 0 }
+
+  getHistory: (direction) ->
+    if settings.get('vimModeSyncSearchHistoy')
+      if vimSearchItem = @getVimSearchHistoryItem()
+        @saveHistory vimSearchItem
+
+    if direction is 'prev'
+      unless @searchHistoryIndex is (@searchHistory.length - 1)
+        @searchHistoryIndex += 1
+    else if direction is 'next'
+      unless @searchHistoryIndex <= 0
+        @searchHistoryIndex -= 1
+    @searchHistory[@searchHistoryIndex]
+
+  saveHistory: (text) ->
+    @searchHistory.unshift text
+    # Eliminate duplicate text in @searchHistory
+    @searchHistory = _.uniq @searchHistory
+    if @searchHistory.length > settings.get('historySize')
+      @searchHistory.pop()
+
+    if settings.get('vimModeSyncSearchHistoy')
+      @saveVimSearchHistory text
 
   # Utility
   # -------------------------
@@ -138,12 +168,18 @@ module.exports =
   setEditorState: (editor, {scrollTop}) ->
     editor.setScrollTop scrollTop
 
+  # vim-mode integration
+  # -------------------------
   consumeVimMode: (@vimModeService) ->
 
-  getVimEditorState: (editor) ->
-    @vimModeService?.getEditorState(editor)
+  getVimSearchHistoryItem: ->
+    # Vim add \b to search, so cleanup here.
+    @vimModeService
+      ?.getEditorState(@editor)
+      ?.getSearchHistoryItem()
+      ?.replace(/\\b/g, '')
 
   saveVimSearchHistory: (text) ->
-    return unless vimState = @getVimEditorState @editor
-    unless text is vimState.getSearchHistoryItem()
+    return unless vimState = @vimModeService?.getEditorState(@editor)
+    unless text is @getVimSearchHistoryItem()
       vimState.pushSearchHistory text

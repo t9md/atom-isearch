@@ -21,10 +21,14 @@ class UI extends HTMLElement
 
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor.isearch',
-      'isearch:cancel':           => @cancel()
-      'isearch:fill-cursor-word': => @fillCursorWord()
-      'core:cancel':              => @cancel()
-      'core:confirm':             => @confirm()
+      'isearch:fill-cursor-word':  => @fillCursorWord()
+      'isearch:fill-history-next': => @fillHistory('next')
+      'isearch:fill-history-prev': => @fillHistory('prev')
+      'isearch:land-to-end':       => @confirm('end')
+      'isearch:land-to-start':     => @confirm('start')
+      'core:confirm':              => @confirm('start')
+      'isearch:cancel':            => @cancel()
+      'core:cancel':               => @cancel()
 
     @handleInput()
     this
@@ -52,6 +56,10 @@ class UI extends HTMLElement
   fillCursorWord: ->
     @editor.setText @main.editor.getWordUnderCursor()
 
+  fillHistory: (direction) ->
+    if entry = @main.getHistory(direction)
+      @editor.setText entry
+
   isVisible: ->
     @panel.isVisible()
 
@@ -70,11 +78,11 @@ class UI extends HTMLElement
     @panel.hide()
     atom.workspace.getActivePane().activate()
 
-  confirm: ->
+  confirm: (where='start')->
     unless @editor.getText()
       return
-    @main.land @getDirection()
-    @main.saveVimSearchHistory @editor.getText()
+    @main.land @getDirection(), where
+    @main.saveHistory @editor.getText()
     @clear()
 
   cancel: ->

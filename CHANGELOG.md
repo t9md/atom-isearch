@@ -1,3 +1,8 @@
+## 0.1.9 - Add search history.
+- Now Support search history for confirmed one.
+- Better integration to vim-mode and option `vimModeSyncSearchHistoy`.
+- Experimental `land-to-end` command.
+
 ## 0.1.8 - Support SmartCase search.
 - Now Support SmartCase search and enabled by default.
 

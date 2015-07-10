@@ -10,7 +10,7 @@
     "atom": ">=1.0.0 <2.0.0"
   },
   "activationCommands": {
-    "atom-workspace": [
+    "atom-text-editor": [
       "isearch:search-forward",
       "isearch:search-backward"
     ]
