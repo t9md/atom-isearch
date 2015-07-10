@@ -1,3 +1,6 @@
+## 0.1.7 - Integrate vim-mode search history.
+- Now confirmed search is saved to vim-mode's search history.
+
 ## 0.1.6 - Improve
 - [FIX] confirm without matching entry throw error.
 - Removed unused keymap directory.

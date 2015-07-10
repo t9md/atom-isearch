@@ -74,6 +74,7 @@ class UI extends HTMLElement
     unless @editor.getText()
       return
     @main.land @getDirection()
+    @main.saveVimSearchHistory @editor.getText()
     @clear()
 
   cancel: ->

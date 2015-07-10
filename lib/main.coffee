@@ -9,11 +9,11 @@ module.exports =
   config: settings.config
 
   activate: ->
+    Match = require './match'
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-workspace',
       'isearch:search-forward':  => @start 'forward'
       'isearch:search-backward': => @start 'backward'
-      Match = require './match'
 
   deactivate: ->
     @subscriptions.dispose()
@@ -132,3 +132,13 @@ module.exports =
 
   setEditorState: (editor, {scrollTop}) ->
     editor.setScrollTop scrollTop
+
+  consumeVimMode: (@vimModeService) ->
+
+  getVimEditorState: (editor) ->
+    @vimModeService?.getEditorState(editor)
+
+  saveVimSearchHistory: (text) ->
+    return unless vimState = @getVimEditorState @editor
+    unless text is vimState.getSearchHistoryItem()
+      vimState.pushSearchHistory text
