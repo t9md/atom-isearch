@@ -118,6 +118,11 @@ module.exports =
   # Utility
   # -------------------------
   getRegExp: (text) ->
+    if settings.get('useSmartCase') and text.match('[A-Z]')
+      flags = 'g'
+    else
+      flags = 'gi'
+
     if settings.get('useWildChar') and wildChar = settings.get('wildChar')
       pattern = text.split(wildChar).map (pattern) ->
         _.escapeRegExp(pattern)
@@ -125,7 +130,7 @@ module.exports =
     else
       pattern = _.escapeRegExp(text)
 
-    ///#{pattern}///ig
+    new RegExp pattern, flags
 
   getEditorState: (editor) ->
     scrollTop: editor.getScrollTop()

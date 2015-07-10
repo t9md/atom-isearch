@@ -10,3 +10,8 @@ module.exports = new ConfigPlus 'isearch',
     type:    'string'
     default: ''
     description: "Use this char as wild card char"
+  useSmartCase:
+    order:   2
+    type:    'boolean'
+    default: true
+    description: "case-sensitive search if search text include capital letters"

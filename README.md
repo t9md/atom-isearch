@@ -15,10 +15,11 @@ I may change frequently style and keymap.
 * Incremental search(scroll to matching each key type).
 * Intentionally use `onDidChange` rather than `onDidStopChanging` for immediate UI feedback.
 * Display matching count and current index to input panel(change color in future release).
-* Don't change cursor position unless you confirm(important to [cursor-history](https://atom.io/packages/cursor-history) like pakcage).
+* Don't change cursor position unless you confirm(important for [cursor-history](https://atom.io/packages/cursor-history) like pakcage).
 * Fill word under cursor to search input are with keymap.
 * Highlight original cursor position while searching and flash current matching.
 * Can use wildcard to reduce keytype, and can configure wildchar.
+* Support SmartCase search(enabled by default) to conveniently switch case-sensitive search.
 
 # Commands
 
@@ -33,6 +34,15 @@ I may change frequently style and keymap.
 2. Input searching text.
 3. Highlighted original cursor position, matchings, automatically scroll to first match.
 4. `core:confirm` to land. or `isearch:cancel` to cancel.
+
+# Configuration
+
+## wild card search
+Enable `useWildChar`, set your favorite char to `wildchar`.
+
+e.g.
+With setting <kbd>space</kbd> to `wildChar`(`wildChar = ' '`).  
+You can reach `this is it` with search text `th t`.  
 
 # Keymap
 
@@ -91,6 +101,7 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [x] Support wild card search.
 * [x] Ensure not leaking mark(need refactoring beforehand).
 * [x] integrate vim-mode's `vim-mode:repeat-search`.
+* [x] Support SmartCase search.
 * [ ] Make style customizable.
 * [ ] Integrate to [smalls](https://atom.io/packages/smalls).
 * [ ] Put multi cursor.

@@ -1,3 +1,6 @@
+## 0.1.8 - Support SmartCase search.
+- Now Support SmartCase search and enabled by default.
+
 ## 0.1.7 - Integrate vim-mode search history.
 - Now confirmed search is saved to vim-mode's search history.
 
