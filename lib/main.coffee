@@ -1,5 +1,6 @@
 {CompositeDisposable, Point} = require 'atom'
 _ = require 'underscore-plus'
+{filter} = require 'fuzzaldrin'
 settings = require './settings'
 
 Match = null
@@ -14,15 +15,17 @@ module.exports =
     @searchHistory = []
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor',
-      'isearch:search-forward':  => @start 'forward'
-      'isearch:search-backward': => @start 'backward'
+      'isearch:search-forward':  => @start 'forward', 'search'
+      'isearch:search-backward': => @start 'backward', 'search'
+      'isearch:token-forward':   => @start 'forward', 'token'
+      'isearch:token-backward':  => @start 'backward', 'token'
 
   deactivate: ->
     @searchHistory = null
     @subscriptions.dispose()
     @cancel()
 
-  start: (direction) ->
+  start: (direction, @mode='search') ->
     ui = @getUI()
     unless ui.isVisible()
       # Initial invocation
@@ -31,6 +34,10 @@ module.exports =
       @editor = atom.workspace.getActiveTextEditor()
       @vimState = @vimModeService?.getEditorState(@editor)
       @editorState = @getEditorState @editor
+      if @mode is 'token'
+        pattern = @editor.getLastCursor().wordRegExp()
+        @matches = @scan(@editor, pattern)
+        @matchesOrg = @matches.slice()
       ui.setDirection direction
       ui.focus()
     else
@@ -51,12 +58,23 @@ module.exports =
     @ui.initialize this
     @ui
 
+
+  scan: (editor, pattern) ->
+    matches = []
+    editor.scan pattern, ({range, matchText}) =>
+      match = new Match(editor, {range, matchText})
+      match.decorate 'isearch-unmatch'
+      matches.push match
+    matches
+
   search: (direction, text) ->
     @reset()
     return unless text
 
-    @editor.scan @getRegExp(text), ({range}) =>
-      match = new Match(@editor, {range, class: 'isearch-found'})
+    pattern = @getRegExp(text)
+    @editor.scan pattern, ({range}) =>
+      match = new Match(@editor, {range})
+      match.decorate 'isearch-found'
       @matches.push match
 
     return unless @matches.length
@@ -64,9 +82,20 @@ module.exports =
     @matchCursor ?= @getMatchForCursor()
     @index = _.sortedIndex @matches, @matchCursor, (match) ->
       match.getScore()
+
     unless @isExceedingBoundry(direction)
       @index -= 1 if direction is 'backward'
       @updateCurrent @matches[@index]
+
+  searchToken: (direction, text) ->
+    for match in @matchesOrg
+      match.setUnMatch()
+    @matches = filter(@matchesOrg,text, key: 'matchText')
+    return unless @matches.length
+    for match in @matches
+      # console.log match
+      match.setNormal()
+    @index = 0
 
   isExceedingBoundry: (direction) ->
     switch direction
@@ -84,7 +113,9 @@ module.exports =
   getMatchForCursor: ->
     start = @editor.getCursorBufferPosition()
     end = start.translate([0, 1])
-    new Match @editor,{range: [start, end], class: 'isearch-cursor'}
+    match = new Match @editor, {range: [start, end]}
+    match.decorate 'isearch-cursor'
+    match
 
   cancel: ->
     @setEditorState @editor, @editorState if @editorState?
@@ -102,6 +133,8 @@ module.exports =
   reset: ->
     @index = 0
     @lastCurrent = null
+    for match in @matchesOrg ? []
+      match.destroy()
     for match in @matches ? []
       match.destroy()
     @matches = []
@@ -117,6 +150,7 @@ module.exports =
   # Accessed from UI
   # -------------------------
   getCount: ->
+    # { total: 1, current: 1 }
     if 0 < @index < @matches.length
       { total: @matches.length, current: @index+1 }
     else

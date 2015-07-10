@@ -113,11 +113,13 @@ I'm ok that I can't search `[`, `]`, `;`.
 * [ ] Put multi cursor.
 * [ ] Excursion mode to move around matchings by vim-like jkhl?
 * [ ] Toggle Regexp, Ignore case, and refrect option state to botton.
-* [ ] Performance improve, delay decoration for entry out of screen?
+* [ ] Performance improvement, delay decoration for entry out of screen?
 * [ ] Change color with `match`, `nomatch`, `bottom`, `top`?
 * [ ] Restore fold when canceled.
 * [ ] Don't search when first char is wild card to avoid heavy computation?
 * [ ] Throttle search to reduce heavy search depending on number of line on editor?
+* [ ] Hovering indicator to display current position and total matches.
+* [ ] Search wrap.
 * [x] Cleanup code.
 * [x] Support wild card search.
 * [x] Ensure not leaking mark(need refactoring beforehand).

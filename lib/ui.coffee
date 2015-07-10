@@ -43,7 +43,15 @@ class UI extends HTMLElement
   handleInput: ->
     @subscriptions = subs = new CompositeDisposable
     subs.add @editor.onDidChange =>
-      @main.search @getDirection(), @editor.getText()
+      if @main.mode is 'token'
+        text = @editor.getText()
+        if text.length
+          console.log 'search token!'
+          @main.searchToken @getDirection(), text
+        else
+          console.log "no sesarch"
+      else
+        @main.search @getDirection(), @editor.getText()
       @refresh()
 
     subs.add @editor.onDidDestroy =>

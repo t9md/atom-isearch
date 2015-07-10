@@ -2,8 +2,7 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Match
-  constructor: (@editor, {@range, class: klass}) ->
-    @decorate klass
+  constructor: (@editor, {@range, @matchText}) ->
 
   decorate: (klass) ->
     @marker = @editor.markBufferRange @range,
@@ -35,6 +34,11 @@ class Match
     @decoration.setProperties
       type: 'highlight'
       class: 'isearch-found'
+
+  setUnMatch: ->
+    @decoration.setProperties
+      type: 'highlight'
+      class: 'isearch-unmatch'
 
   setCurrent: ->
     @decoration.setProperties
