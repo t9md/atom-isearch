@@ -1,4 +1,4 @@
-{CompositeDisposable, Point} = require 'atom'
+{CompositeDisposable, Range, Point} = require 'atom'
 _ = require 'underscore-plus'
 {filter} = require 'fuzzaldrin'
 settings = require './settings'
@@ -17,8 +17,8 @@ module.exports =
     @subscriptions.add atom.commands.add 'atom-text-editor',
       'isearch:search-forward':  => @start 'forward', 'search'
       'isearch:search-backward': => @start 'backward', 'search'
-      'isearch:token-forward':   => @start 'forward', 'token'
-      'isearch:token-backward':  => @start 'backward', 'token'
+      'isearch:word-forward':    => @start 'forward', 'word'
+      'isearch:word-backward':   => @start 'backward', 'word'
 
   deactivate: ->
     @searchHistory = null
@@ -31,55 +31,54 @@ module.exports =
       # Initial invocation
       @matchCursor = null
       @searchHistoryIndex = -1
+      if @words
+        # Last time's defered destroy() might not finished.
+        for match in @words
+          match.destroy()
+      @words = []
       @editor = atom.workspace.getActiveTextEditor()
       @vimState = @vimModeService?.getEditorState(@editor)
       @editorState = @getEditorState @editor
-      if @mode is 'token'
-        pattern = @editor.getLastCursor().wordRegExp()
-        @matches = @scan(@editor, pattern)
-        @matchesOrg = @matches.slice()
       ui.setDirection direction
       ui.focus()
     else
       # invocation with UI already displayed
       ui.setDirection direction
       return unless @matches.length
-      unless @isExceedingBoundry(direction)
+      unless (@lastDirection is direction and not @lastCurrent)
         # This mean last search was 'backward' and not found for backward direction.
         # Adjusting index make first entry(index=0) current.
         if direction is 'forward' and not @lastCurrent
           @index -= 1
         @updateCurrent @matches[@updateIndex(direction)]
-      ui.refresh()
+        ui.refresh()
 
   getUI: ->
-    return @ui if @ui
-    @ui = new (require './ui')
-    @ui.initialize this
-    @ui
-
+    @ui ?= (
+      ui = new (require './ui')
+      ui.initialize this
+      ui)
 
   scan: (editor, pattern) ->
     matches = []
     editor.scan pattern, ({range, matchText}) =>
-      match = new Match(editor, {range, matchText})
-      match.decorate 'isearch-unmatch'
-      matches.push match
+      matches.push new Match(editor, {range, matchText, class: 'isearch-unmatch'})
     matches
 
   search: (direction, text) ->
     @reset()
+    @lastDirection = direction
     return unless text
 
     pattern = @getRegExp(text)
     @editor.scan pattern, ({range}) =>
-      match = new Match(@editor, {range})
-      match.decorate 'isearch-found'
-      @matches.push match
+      @matches.push new Match(@editor, {range, class: 'isearch-found'})
 
     return unless @matches.length
+    @matchCursor ?= @getMatchCursor()
 
-    @matchCursor ?= @getMatchForCursor()
+    # @matches = _.sortBy @matches, (match) =>
+    #   match.getScore(@matchCursor.start)
     @index = _.sortedIndex @matches, @matchCursor, (match) ->
       match.getScore()
 
@@ -87,15 +86,30 @@ module.exports =
       @index -= 1 if direction is 'backward'
       @updateCurrent @matches[@index]
 
-  searchToken: (direction, text) ->
-    for match in @matchesOrg
-      match.setUnMatch()
-    @matches = filter(@matchesOrg,text, key: 'matchText')
+  searchWord: (direction, text) ->
+    unless @words.length
+      pattern = /[\w-.]+/g
+      @matches = @scan(@editor, pattern)
+      @words = @matches.slice()
+    else
+      # if @lastMatch
+      # reset decoration.
+      for match in @words
+        match.setDecoration('isearch-unmatch')
+    return unless text
+    @matches = filter(@words,text, key: 'matchText')
     return unless @matches.length
     for match in @matches
-      # console.log match
-      match.setNormal()
-    @index = 0
+      match.setDecoration('isearch-found')
+    @matchCursor ?= @getMatchCursor()
+    @matches = _.sortBy @matches, (match) ->
+      match.getScore()
+    @index = _.sortedIndex @matches, @matchCursor, (match) ->
+      match.getScore()
+
+    unless @isExceedingBoundry(direction)
+      @index -= 1 if direction is 'backward'
+      @scrollToMatch @matches[@index]
 
   isExceedingBoundry: (direction) ->
     switch direction
@@ -105,16 +119,24 @@ module.exports =
         @index is 0
 
   updateCurrent: (match) ->
-    @lastCurrent?.setNormal()
-    match.setCurrent()
+    @lastCurrent?.setDecoration('isearch-found')
+    match.setDecoration('isearch-found current')
+    unless @lastCurrent?.start.isEqual(match.start)
+      match.flash()
     match.scroll()
     @lastCurrent = match
 
-  getMatchForCursor: ->
+  scrollToMatch: (match) ->
+    match.setDecoration('isearch-found current')
+    match.flash()
+    match.scroll()
+
+  getMatchCursor: ->
     start = @editor.getCursorBufferPosition()
     end = start.translate([0, 1])
-    match = new Match @editor, {range: [start, end]}
-    match.decorate 'isearch-cursor'
+    range = new Range(start, end)
+    match = new Match(@editor, {range, class: 'isearch-cursor'})
+    # match.flash()
     match
 
   cancel: ->
@@ -122,21 +144,25 @@ module.exports =
     @editorState = null
     @matchCursor?.destroy()
     @matchCursor = null
+    @lastCurrent = null
     @reset()
 
-  land: (direction, where) ->
-    @matches?[@index]?.land direction, where
+  land: (direction) ->
+    @matches?[@index]?.land direction
     @matchCursor?.destroy()
     @matchCursor = null
     @reset()
 
   reset: ->
     @index = 0
-    @lastCurrent = null
-    for match in @matchesOrg ? []
-      match.destroy()
-    for match in @matches ? []
-      match.destroy()
+    if @words
+      _.defer =>
+        for match in @words
+          match.destroy()
+        @words = null
+    else
+      for match in @matches ? []
+        match.destroy()
     @matches = []
 
   updateIndex: (direction) ->
@@ -150,7 +176,6 @@ module.exports =
   # Accessed from UI
   # -------------------------
   getCount: ->
-    # { total: 1, current: 1 }
     if 0 < @index < @matches.length
       { total: @matches.length, current: @index+1 }
     else

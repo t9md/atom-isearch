@@ -24,36 +24,28 @@ class UI extends HTMLElement
       'isearch:fill-cursor-word':  => @fillCursorWord()
       'isearch:fill-history-next': => @fillHistory('next')
       'isearch:fill-history-prev': => @fillHistory('prev')
-      'isearch:land-to-end':       => @confirm('end')
-      'isearch:land-to-start':     => @confirm('start')
-      'core:confirm':              => @confirm('start')
-      'isearch:cancel':            => @cancel()
-      'core:cancel':               => @cancel()
-
+      'core:confirm':   => @confirm()
+      'isearch:cancel': => @cancel()
+      'core:cancel':    => @cancel()
+      
     @handleInput()
     this
 
   focus: ->
     @cleared = false
-    @editor.setText ''
-
     @panel.show()
     @editorView.focus()
 
   handleInput: ->
     @subscriptions = subs = new CompositeDisposable
     subs.add @editor.onDidChange =>
-      if @main.mode is 'token'
+      return if @isCleared()
+      if @main.mode is 'word'
         text = @editor.getText()
-        if text.length
-          console.log 'search token!'
-          @main.searchToken @getDirection(), text
-        else
-          console.log "no sesarch"
+        @main.searchWord @getDirection(), text
       else
         @main.search @getDirection(), @editor.getText()
       @refresh()
-
     subs.add @editor.onDidDestroy =>
       subs.dispose()
 
@@ -83,13 +75,14 @@ class UI extends HTMLElement
   clear: ->
     return if @isCleared()
     @cleared = true
+    @editor.setText ''
     @panel.hide()
     atom.workspace.getActivePane().activate()
 
-  confirm: (where='start')->
+  confirm: ->
     unless @editor.getText()
       return
-    @main.land @getDirection(), where
+    @main.land @getDirection()
     @main.saveHistory @editor.getText()
     @clear()
 

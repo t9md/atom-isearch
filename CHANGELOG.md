@@ -1,3 +1,6 @@
+## 0.1.10 - Improve
+- Remove not `land-to-end` command. YAGNI.
+
 ## 0.1.9 - Add search history.
 - Now Support search history for confirmed one.
 - Better integration to vim-mode and option `vimModeSyncSearchHistoy`.

@@ -2,16 +2,22 @@ _ = require 'underscore-plus'
 
 module.exports =
 class Match
-  constructor: (@editor, {@range, @matchText}) ->
+  constructor: (@editor, {@range, @matchText, class: klass}) ->
+    {@start, @end} = @range
+    @setDecoration klass
 
-  decorate: (klass) ->
+  setDecoration: (klass) ->
+    options = {type: 'highlight', class: klass}
+    if @decoration
+      @decoration.setProperties options
+    else
+      @decoration = @decorate options
+
+  decorate: (options) ->
     @marker = @editor.markBufferRange @range,
       invalidate: 'never'
       persistent: false
-
-    @decoration = @editor.decorateMarker @marker,
-      type: 'highlight'
-      class: klass
+    @editor.decorateMarker @marker, options
 
   scroll: ->
     screenRange = @marker.getScreenRange()
@@ -30,34 +36,27 @@ class Match
       decoration.getMarker().destroy()
     , 150
 
-  setNormal: ->
-    @decoration.setProperties
-      type: 'highlight'
-      class: 'isearch-found'
-
-  setUnMatch: ->
-    @decoration.setProperties
-      type: 'highlight'
-      class: 'isearch-unmatch'
-
-  setCurrent: ->
-    @decoration.setProperties
-      type: 'highlight'
-      class: 'isearch-found current'
-    @flash()
-
-  # To determine sorted order by _.sortedIndex which use binary search from sorted list.
   getScore: ->
-    {row, column} = @marker.getStartBufferPosition()
+    {row, column} = @start
     row * 1000 + column
 
+  # To determine sorted order by _.sortedIndex which use binary search from sorted list.
+  # getScore: (point) ->
+  #   {row, column} = @start
+  #   score = row * 1000 + column
+  #   score = score * 10000 if @start.isLessThan(point)
+  #   score
+
+  # TODO: where is not essential and usefull, should remove()
+  # `start` only OK.
   land: (direction, where) ->
-    where = _.capitalize(where) # 'Start' or 'End'
-    point = @marker["get#{where}BufferPosition"]()
+    # where is 'start' or 'end'
+    point = @start
     if (@editor.getLastSelection().isEmpty())
       @editor.setCursorBufferPosition point
     else
-      point = @marker.getEndBufferPosition() if direction is 'forward'
+      # [FIXME] Is it reasonable, need carefully think about?
+      point = @end if direction is 'forward'
       @editor.selectToBufferPosition point
 
   destroy: ->
