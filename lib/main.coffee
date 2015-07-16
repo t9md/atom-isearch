@@ -1,9 +1,10 @@
-{CompositeDisposable, Range, Point} = require 'atom'
+{CompositeDisposable, Range} = require 'atom'
 _ = require 'underscore-plus'
-{filter} = require 'fuzzaldrin'
 settings = require './settings'
 
 Match = null
+MatchList = null
+HoverContainer = null
 
 module.exports =
   subscriptions: null
@@ -11,47 +12,33 @@ module.exports =
   searchHistory: null
 
   activate: ->
-    Match = require './match'
+    {Match, MatchList} = require './match'
+    {HoverContainer}   = require './hover-indicator'
     @searchHistory = []
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor',
-      'isearch:search-forward':  => @start 'forward', 'search'
-      'isearch:search-backward': => @start 'backward', 'search'
-      'isearch:word-forward':    => @start 'forward', 'word'
-      'isearch:word-backward':   => @start 'backward', 'word'
+      'isearch:search-forward':  => @start 'forward'
+      'isearch:search-backward': => @start 'backward'
 
   deactivate: ->
-    @searchHistory = null
     @subscriptions.dispose()
     @cancel()
 
-  start: (direction, @mode='search') ->
+  start: (@direction) ->
     ui = @getUI()
     unless ui.isVisible()
-      # Initial invocation
-      @matchCursor = null
       @searchHistoryIndex = -1
-      if @words
-        # Last time's defered destroy() might not finished.
-        for match in @words
-          match.destroy()
-      @words = []
-      @editor = atom.workspace.getActiveTextEditor()
+      @editor = @getEditor()
+      @restoreEditorState = @saveEditorState @editor
+      @matches = new MatchList()
       @vimState = @vimModeService?.getEditorState(@editor)
-      @editorState = @getEditorState @editor
-      ui.setDirection direction
       ui.focus()
     else
-      # invocation with UI already displayed
-      ui.setDirection direction
-      return unless @matches.length
-      unless (@lastDirection is direction and not @lastCurrent)
-        # This mean last search was 'backward' and not found for backward direction.
-        # Adjusting index make first entry(index=0) current.
-        if direction is 'forward' and not @lastCurrent
-          @index -= 1
-        @updateCurrent @matches[@updateIndex(direction)]
-        ui.refresh()
+      return if @matches.isEmpty()
+      @matches.visit @direction
+      if atom.config.get('isearch.showHoverIndicator')
+        @showHover @matches.getCurrent()
+      ui.showCounter()
 
   getUI: ->
     @ui ?= (
@@ -59,127 +46,72 @@ module.exports =
       ui.initialize this
       ui)
 
-  scan: (editor, pattern) ->
+  getCandidates: (text) ->
     matches = []
-    editor.scan pattern, ({range, matchText}) =>
-      matches.push new Match(editor, {range, matchText, class: 'isearch-unmatch'})
+    @editor.scan @getRegExp(text), ({range, matchText}) =>
+      matches.push new Match(@editor, {range, matchText})
     matches
 
-  search: (direction, text) ->
-    @reset()
-    @lastDirection = direction
-    return unless text
+  search: (text) ->
+    @matches.reset()
 
-    pattern = @getRegExp(text)
-    @editor.scan pattern, ({range}) =>
-      @matches.push new Match(@editor, {range, class: 'isearch-found'})
+    unless text
+      @container?.hide()
+      return
+    @matches.replace @getCandidates(text)
 
-    return unless @matches.length
-    @matchCursor ?= @getMatchCursor()
+    if @matches.isEmpty()
+      @debouncedFlashScreen()
+      @container?.hide()
+      return
 
-    # @matches = _.sortBy @matches, (match) =>
-    #   match.getScore(@matchCursor.start)
-    @index = _.sortedIndex @matches, @matchCursor, (match) ->
-      match.getScore()
+    @matchCursor ?= @getMatchForCursor()
+    @matches.visit @direction, from: @matchCursor, redrawAll: true
 
-    unless @isExceedingBoundry(direction)
-      @index -= 1 if direction is 'backward'
-      @updateCurrent @matches[@index]
+    if atom.config.get('isearch.showHoverIndicator')
+      @showHover @matches.getCurrent()
 
-  searchWord: (direction, text) ->
-    unless @words.length
-      pattern = /[\w-.]+/g
-      @matches = @scan(@editor, pattern)
-      @words = @matches.slice()
-    else
-      # if @lastMatch
-      # reset decoration.
-      for match in @words
-        match.setDecoration('isearch-unmatch')
-    return unless text
-    @matches = filter(@words,text, key: 'matchText')
-    return unless @matches.length
-    for match in @matches
-      match.setDecoration('isearch-found')
-    @matchCursor ?= @getMatchCursor()
-    @matches = _.sortBy @matches, (match) ->
-      match.getScore()
-    @index = _.sortedIndex @matches, @matchCursor, (match) ->
-      match.getScore()
+  showHover: (match) ->
+    @container ?= new HoverContainer().initialize(@editor)
+    @container.show match, @getCount()
 
-    unless @isExceedingBoundry(direction)
-      @index -= 1 if direction is 'backward'
-      @scrollToMatch @matches[@index]
-
-  isExceedingBoundry: (direction) ->
-    switch direction
-      when 'forward'
-        @index is @matches.length
-      when 'backward'
-        @index is 0
-
-  updateCurrent: (match) ->
-    @lastCurrent?.setDecoration('isearch-found')
-    match.setDecoration('isearch-found current')
-    unless @lastCurrent?.start.isEqual(match.start)
-      match.flash()
-    match.scroll()
-    @lastCurrent = match
-
-  scrollToMatch: (match) ->
-    match.setDecoration('isearch-found current')
-    match.flash()
-    match.scroll()
-
-  getMatchCursor: ->
+  getMatchForCursor: ->
     start = @editor.getCursorBufferPosition()
     end = start.translate([0, 1])
-    range = new Range(start, end)
-    match = new Match(@editor, {range, class: 'isearch-cursor'})
-    # match.flash()
+    match = new Match(@editor, range: new Range(start, end))
+    match.decorate 'isearch-cursor'
     match
 
   cancel: ->
-    @setEditorState @editor, @editorState if @editorState?
-    @editorState = null
-    @matchCursor?.destroy()
-    @matchCursor = null
-    @lastCurrent = null
+    @restoreEditorState()
+    @restoreEditorState = null
     @reset()
 
-  land: (direction) ->
-    @matches?[@index]?.land direction
-    @matchCursor?.destroy()
-    @matchCursor = null
+  land: ->
+    point = @matches.getCurrent().start
+    if @editor.getLastSelection().isEmpty()
+      @editor.setCursorBufferPosition point
+    else
+      @editor.selectToBufferPosition point
     @reset()
 
   reset: ->
-    @index = 0
-    if @words
-      _.defer =>
-        for match in @words
-          match.destroy()
-        @words = null
-    else
-      for match in @matches ? []
-        match.destroy()
-    @matches = []
+    @flashingTimeout    = null
+    @restoreEditorState = null
 
-  updateIndex: (direction) ->
-    @index =
-      if direction is 'forward'
-        Math.min(@matches.length-1, @index+1)
-      else
-        Math.max(0, @index-1)
-    @index
+    @matchCursor?.destroy()
+    @matchCursor = null
+
+    @container?.destroy()
+    @container = null
+
+    @matches?.destroy()
+    @matches = null
 
   # Accessed from UI
   # -------------------------
   getCount: ->
-    if 0 < @index < @matches.length
-      { total: @matches.length, current: @index+1 }
-    else
-      { total: @matches.length, current: 0 }
+    @matches.getInfo()
 
   getHistory: (direction) ->
     if settings.get('vimModeSyncSearchHistoy')
@@ -226,6 +158,44 @@ module.exports =
 
   setEditorState: (editor, {scrollTop}) ->
     editor.setScrollTop scrollTop
+
+  getEditor: ->
+    atom.workspace.getActiveTextEditor()
+
+  # Return function to restore editor state.
+  saveEditorState: (editor) ->
+    scrollTop = editor.getScrollTop()
+    foldStartRows = editor.displayBuffer.findFoldMarkers().map (m) =>
+      editor.displayBuffer.foldForMarker(m).getStartRow()
+    ->
+      for row in foldStartRows.reverse() when not editor.isFoldedAtBufferRow(row)
+        editor.foldBufferRow row
+      editor.setScrollTop scrollTop
+
+  debouncedFlashScreen: ->
+    @_debouncedFlashScreen ?= _.debounce @flashScreen.bind(this), 150, true
+    @_debouncedFlashScreen()
+
+  flashScreen: ->
+    [startRow, endRow] = @editor.getVisibleRowRange().map (row) =>
+      @editor.bufferRowForScreenRow row
+
+    range = new Range([startRow, 0], [endRow, Infinity])
+    marker = @editor.markBufferRange range,
+      invalidate: 'never'
+      persistent: false
+
+    @flashingDecoration?.getMarker().destroy()
+    clearTimeout @flashingTimeout
+
+    @flashingDecoration = @editor.decorateMarker marker,
+      type: 'highlight'
+      class: 'isearch-flash'
+
+    @flashingTimeout = setTimeout =>
+      @flashingDecoration.getMarker().destroy()
+      @flashingDecoration = null
+    , 150
 
   # vim-mode integration
   # -------------------------

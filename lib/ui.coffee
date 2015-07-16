@@ -4,54 +4,61 @@ class UI extends HTMLElement
   createdCallback: ->
     @hiddenPanels = []
     @classList.add 'isearch-ui'
-    @container = document.createElement 'div'
-    @matchCountContainer = document.createElement 'div'
-    @container.className = 'editor-container'
-    @appendChild @matchCountContainer
-    @appendChild @container
 
-  initialize: (@main) ->
-    @editorView = document.createElement 'atom-text-editor'
-    @editorView.classList.add 'editor', 'isearch'
-    @editorView.getModel().setMini true
-    @editorView.setAttribute 'mini', ''
-    @container.appendChild @editorView
-    @editor = @editorView.getModel()
+    @editorContainer = document.createElement 'div'
+    @editorContainer.className = 'editor-container'
+    @counterContainer = document.createElement 'div'
+    @counterContainer.className = 'counter'
+
+    @appendChild @counterContainer
+    @appendChild @editorContainer
+
+    @editorElement = document.createElement 'atom-text-editor'
+    @editorElement.classList.add 'editor', 'isearch'
+    @editorElement.getModel().setMini true
+    @editorElement.setAttribute 'mini', ''
+    @editorContainer.appendChild @editorElement
+    @editor = @editorElement.getModel()
     @panel = atom.workspace.addBottomPanel item: this, visible: false
 
+  initialize: (@main) ->
     @subscriptions = new CompositeDisposable
     @subscriptions.add atom.commands.add 'atom-text-editor.isearch',
       'isearch:fill-cursor-word':  => @fillCursorWord()
       'isearch:fill-history-next': => @fillHistory('next')
       'isearch:fill-history-prev': => @fillHistory('prev')
+
       'core:confirm':   => @confirm()
       'isearch:cancel': => @cancel()
       'core:cancel':    => @cancel()
-      
-    @handleInput()
-    this
 
-  focus: ->
-    @cleared = false
-    @panel.show()
-    @editorView.focus()
+    @handleInput()
+    console.log "UI initialized"
+    this
 
   handleInput: ->
     @subscriptions = subs = new CompositeDisposable
+
     subs.add @editor.onDidChange =>
-      return if @isCleared()
-      if @main.mode is 'word'
-        text = @editor.getText()
-        @main.searchWord @getDirection(), text
-      else
-        @main.search @getDirection(), @editor.getText()
-      @refresh()
+      return if @isFinishing()
+      @main.search @editor.getText()
+      @showCounter()
+
     subs.add @editor.onDidDestroy =>
       subs.dispose()
 
-  setDirection: (@direction) ->
-  getDirection: ->
-    @direction
+  isFinishing: ->
+    @finishing
+
+  showCounter: ->
+    {total, current} = @main.getCount()
+    content = if total isnt 0 then "#{current} / #{total}" else "0"
+    @counterContainer.textContent = "Isearch: #{content}"
+
+  focus: ->
+    @panel.show()
+    @editorElement.focus()
+    @showCounter()
 
   fillCursorWord: ->
     @editor.setText @main.editor.getWordUnderCursor()
@@ -60,38 +67,33 @@ class UI extends HTMLElement
     if entry = @main.getHistory(direction)
       @editor.setText entry
 
-  isVisible: ->
-    @panel.isVisible()
-
-  refresh: ->
-    {total, current} = @main.getCount()
-    content = "Total: #{total}"
-    content += ", Current: #{current}" if total isnt 0
-    @matchCountContainer.textContent = content
-
-  isCleared: ->
-    @cleared
-
-  clear: ->
-    return if @isCleared()
-    @cleared = true
+  unFocus: ->
     @editor.setText ''
     @panel.hide()
     atom.workspace.getActivePane().activate()
+    @finishing = false
 
   confirm: ->
-    unless @editor.getText()
-      return
-    @main.land @getDirection()
-    @main.saveHistory @editor.getText()
-    @clear()
+    return unless @editor.getText()
+    @finishing = true
+    @main.land()
+    @main.saveHistory @editor.getText() # [FIXME] should move main
+    @unFocus()
 
   cancel: ->
+    # [NOTE] blur event happen on confirmed(),
+    # in this case we shouldn't cancel.
+    return if @finishing
+    @finishing = true
     @main.cancel()
-    @clear()
+    @unFocus()
+
+  isVisible: ->
+    @panel.isVisible()
 
   destroy: ->
     @panel.destroy()
+    @editor.destroy()
     @subscriptions.dispose()
     @remove()
 

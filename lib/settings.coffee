@@ -26,3 +26,7 @@ module.exports = new ConfigPlus 'isearch',
     type:    'boolean'
     default: true
     description: "Sync search history to vim-mode's search history if available"
+  showHoverIndicator:
+    order:   5
+    type:    'boolean'
+    default: true

@@ -12,10 +12,7 @@
   "activationCommands": {
     "atom-text-editor": [
       "isearch:search-forward",
-      "isearch:search-backward",
-      "isearch:word-forward",
-      "isearch:word-backward",
-      "isearch:test"
+      "isearch:search-backward"
     ]
   },
   "consumedServices": {

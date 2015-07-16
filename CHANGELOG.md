@@ -1,3 +1,6 @@
+## 0.1.11 - Improve
+- Port codes from my very similar packages `lazy-motion`.
+
 ## 0.1.10 - Improve
 - Remove not `land-to-end` command. YAGNI.
 
