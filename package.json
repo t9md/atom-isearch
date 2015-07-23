@@ -1,7 +1,7 @@
 {
   "name": "isearch",
   "main": "./lib/main",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Incremental search",
   "keywords": [],
   "repository": "https://github.com/t9md/atom-isearch",
