@@ -33,7 +33,6 @@ class UI extends HTMLElement
       'core:cancel':    => @cancel()
 
     @handleInput()
-    console.log "UI initialized"
     this
 
   handleInput: ->

@@ -10,6 +10,7 @@ module.exports =
   subscriptions: null
   config: settings.config
   searchHistory: null
+  container: null
 
   activate: ->
     {Match, MatchList} = require './match'

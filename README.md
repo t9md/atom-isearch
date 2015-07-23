@@ -90,7 +90,7 @@ My setting, very experimental.
 I'm ok that I can't search `[`, `]`, `;`.
 
 ```coffeescript
-'atom-text-editor.vim-mode.command-mode':
+'atom-text-editor.vim-mode.normal-mode':
   's': 'isearch:search-forward'
   'S': 'isearch:search-backward'
 
