@@ -84,7 +84,7 @@ module.exports =
     match
 
   cancel: ->
-    @restoreEditorState()
+    @restoreEditorState?()
     @restoreEditorState = null
     @reset()
 
