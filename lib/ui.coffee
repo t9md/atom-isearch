@@ -74,6 +74,7 @@ class UI extends HTMLElement
 
   confirm: ->
     return unless @editor.getText()
+    return if @main.matches.isEmpty()
     @finishing = true
     @main.land()
     @main.saveHistory @editor.getText() # [FIXME] should move main

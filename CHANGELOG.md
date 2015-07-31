@@ -1,3 +1,6 @@
+## 0.1.13 - FIX
+- No longer trowing Exception when confirmed with no matched entries.
+
 ## 0.1.12 - Doc
 - Update readme to follow vim-mode's rename from command-mode to normal-mode
 

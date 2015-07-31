@@ -97,7 +97,6 @@ class MatchList
       last?.decorate 'isearch-match bottom'
 
     # update current
-    # @lastMatch?.decorate 'current', 'remove'
     current = @getCurrent()
     current.decorate 'current', 'append'
     current.scroll()
