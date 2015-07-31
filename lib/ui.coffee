@@ -31,6 +31,8 @@ class UI extends HTMLElement
       'core:confirm':   => @confirm()
       'isearch:cancel': => @cancel()
       'core:cancel':    => @cancel()
+      'click':          => @cancel()
+      'blur':           => @cancel()
 
     @handleInput()
     this
@@ -55,6 +57,7 @@ class UI extends HTMLElement
     @counterContainer.textContent = "Isearch: #{content}"
 
   focus: ->
+    @mainEditorSubscription = @main.editor.onDidDestroy => @cancel()
     @panel.show()
     @editorElement.focus()
     @showCounter()
@@ -67,6 +70,7 @@ class UI extends HTMLElement
       @editor.setText entry
 
   unFocus: ->
+    @mainEditorSubscription.dispose()
     @editor.setText ''
     @panel.hide()
     atom.workspace.getActivePane().activate()
@@ -95,6 +99,7 @@ class UI extends HTMLElement
     @panel.destroy()
     @editor.destroy()
     @subscriptions.dispose()
+    @mainEditorSubscription.dispose()
     @remove()
 
 module.exports =
