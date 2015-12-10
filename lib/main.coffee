@@ -1,6 +1,7 @@
 {CompositeDisposable, Range} = require 'atom'
 _ = require 'underscore-plus'
 settings = require './settings'
+{getView, saveEditorState} = require './utils'
 
 Match = null
 MatchList = null
@@ -30,7 +31,7 @@ module.exports =
     unless ui.isVisible()
       @searchHistoryIndex = -1
       @editor = @getEditor()
-      @restoreEditorState = @saveEditorState @editor
+      @restoreEditorState = saveEditorState(@editor)
       @matches = new MatchList()
       @vimState = @vimModeService?.getEditorState(@editor)
       ui.focus()
@@ -97,17 +98,14 @@ module.exports =
     @reset()
 
   reset: ->
-    @flashingTimeout    = null
-    @restoreEditorState = null
-
     @matchCursor?.destroy()
-    @matchCursor = null
-
     @container?.destroy()
-    @container = null
-
     @matches?.destroy()
-    @matches = null
+
+    {
+      @flashingTimeout, @restoreEditorState
+      @matchCursor, @container, @matches
+    } = {}
 
   # Accessed from UI
   # -------------------------
@@ -155,23 +153,13 @@ module.exports =
     new RegExp pattern, flags
 
   getEditorState: (editor) ->
-    scrollTop: editor.getScrollTop()
+    scrollTop: getView(editor).getScrollTop()
 
   setEditorState: (editor, {scrollTop}) ->
-    editor.setScrollTop scrollTop
+    getView(editor).setScrollTop scrollTop
 
   getEditor: ->
     atom.workspace.getActiveTextEditor()
-
-  # Return function to restore editor state.
-  saveEditorState: (editor) ->
-    scrollTop = editor.getScrollTop()
-    foldStartRows = editor.displayBuffer.findFoldMarkers().map (m) =>
-      editor.displayBuffer.foldForMarker(m).getStartRow()
-    ->
-      for row in foldStartRows.reverse() when not editor.isFoldedAtBufferRow(row)
-        editor.foldBufferRow row
-      editor.setScrollTop scrollTop
 
   debouncedFlashScreen: ->
     @_debouncedFlashScreen ?= _.debounce @flashScreen.bind(this), 150, true

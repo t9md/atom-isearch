@@ -45,7 +45,7 @@ class UI extends HTMLElement
       @main.search @editor.getText()
       @showCounter()
 
-    subs.add @editor.onDidDestroy =>
+    subs.add @editor.onDidDestroy ->
       subs.dispose()
 
   isFinishing: ->

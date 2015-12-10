@@ -1,3 +1,7 @@
+## 0.1.13 - FIX
+- FIX: findFoldMarkers require explicit filter query object from Atom v1.3.0 #8
+- FIX: deprecation message
+
 ## 0.1.12 - Doc
 - Update readme to follow vim-mode's rename from command-mode to normal-mode
 - #2, #3

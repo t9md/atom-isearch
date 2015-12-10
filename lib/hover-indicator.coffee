@@ -1,3 +1,5 @@
+{getView} = require './utils'
+
 class Hover extends HTMLElement
   createdCallback: ->
     @classList.add 'isearch-hover'
@@ -13,10 +15,10 @@ class Hover extends HTMLElement
     @classList.add 'top'    if match.isTop()
     @classList.add 'bottom' if match.isBottom()
 
-    editorView       = atom.views.getView(editor)
+    editorView       = getView(editor)
     px               = editorView.pixelPositionForBufferPosition match.end
-    top              = px.top  - editor.getScrollTop()
-    left             = px.left - editor.getScrollLeft()
+    top              = px.top  - editorView.getScrollTop()
+    left             = px.left - editorView.getScrollLeft()
     @style.top       = top  + 'px'
     @style.left      = left + 'px'
     @style.marginTop = '0px' if top <= 0
