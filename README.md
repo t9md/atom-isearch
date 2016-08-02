@@ -1,3 +1,10 @@
+# Unpublished at 2016.8.3.
+
+Since I'm no longer using this package.  
+No time to maintain the package which I don't actively use.
+I still use incremental-search feature which is builtin in [vim-mode-plus](https://atom.io/packages/vim-mode-plus).  
+I just don't want to maintain very similar two features.  
+
 # isearch
 
 Incremental search.
